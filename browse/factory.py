@@ -7,7 +7,7 @@ from browse.util.clickthrough import create_ct_url
 from browse.util.id_patterns import do_dois_id_urls_to_tags, do_id_to_tags, \
     do_dois_arxiv_ids_to_tags
 from browse.routes import ui
-from browse.services.database import models
+from browse.services import database
 from browse.services.util.email import generate_show_email_hash
 from browse.filters import line_feed_to_br, tex_to_utf, entity_to_utf, \
     single_doi_url
@@ -27,7 +27,7 @@ def create_web_app() -> Flask:
     app.config['URLS'].append(
         ('search_archive', '/search/<archive>', BASE_SERVER))
 
-    models.init_app(app)
+    database.init_app(app)
 
     Base(app)
     app.register_blueprint(ui.blueprint)

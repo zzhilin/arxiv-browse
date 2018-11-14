@@ -5,7 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import BigInteger, Column, DateTime, Enum, ForeignKey, Index, \
     Integer, SmallInteger, String, text, Text
 from sqlalchemy.orm import relationship
-from werkzeug.local import LocalProxy
 
 db: SQLAlchemy = SQLAlchemy()
 
@@ -291,8 +290,3 @@ class DBLPDocumentAuthor(db.Model):
 
     author = relationship('DBLPAuthor')
     document = relationship('Document')
-
-
-def init_app(app: Optional[LocalProxy]) -> None:
-    """Set configuration defaults and attach session to the application."""
-    db.init_app(app)

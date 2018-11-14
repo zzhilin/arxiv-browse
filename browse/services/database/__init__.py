@@ -8,20 +8,29 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import Query
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError, DBAPIError
+
 from arxiv.base.globals import get_application_config
+from arxiv.base import logging
 
 from browse.services.database.models import db, Document, \
     MemberInstitution, MemberInstitutionIP, TrackbackPing, SciencewisePing, \
     DBLP, DBLPAuthor, DBLPDocumentAuthor
-from arxiv.base import logging
+
+from werkzeug.local import LocalProxy
+
 from logging import Logger
 
 logger = logging.getLogger(__name__)
 app_config = get_application_config()
 
 
-def db_handle_error(logger: Logger, default_return_val: Any) \
-        -> Any:
+def init_app(app: Optional[LocalProxy]) -> None:
+    """Set configuration defaults and attach session to the application."""
+    db.init_app(app)
+    logger.debug('database.db instance is %s', id(db))
+
+
+def db_handle_error(logger: Logger, default_return_val: Any) -> Any:
     """Handle operational database errors via decorator."""
     def decorator(func: Callable) -> Any:
         def wrapper(*args, **kwargs):  # type: ignore
