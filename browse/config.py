@@ -247,3 +247,5 @@ CLICKTHROUGH_SECRET = os.environ.get('CLICKTHROUGH_SECRET', 'bar')
 
 # arXiv Labs options
 LABS_BIBEXPLORER_ENABLED = os.environ.get('LABS_BIBEXPLORER_ENABLED', True)
+LOGFILE = os.environ.get('LOGFILE')
+LOGLEVEL = os.environ.get('LOGLEVEL', 20)
