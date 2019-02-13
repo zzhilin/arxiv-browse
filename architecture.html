@@ -1,0 +1,365 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Browse Application Architecture &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to arXiv Browse Service’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="browse-application-architecture">
+<h1>Browse Application Architecture<a class="headerlink" href="#browse-application-architecture" title="Permalink to this headline">¶</a></h1>
+<p>The browse application provides reader-facing views onto arXiv documents and
+their metadata. “Browse” functionality encompasses the abstract page, content
+views (e.g. PDF, HTML), and views onto the classification hierarchy.</p>
+<p>The abstract page provides metadata about an arXiv document/version, links to
+document content, and links to resources related to that document. In the
+Classic arXiv system, the abstract page is provided at arxiv.org/abs/[arxiv id]
+by a Perl controller abs.pl. The eventual goal is provide the abstract page, and
+other browse-related views, via a stand-alone web application that is decoupled
+from other parts of the system (e.g. deployed on separate hardware, with its own
+secondary data store).</p>
+<p>The development strategy for this component is to incrementally migrate the
+abstract view out of the existing Classic web application first by servicing the
+existing endpoint from behind the current web server using the existing
+database, and then incrementally migrating to new data stores and
+infrastructure. This depends on adherence to a core set of architectural
+constraints that allow the layers of the application to evolve independently.</p>
+<p>The architecture described below is a starting point for further engineering,
+and should evolve as the the application is implemented.</p>
+<div class="section" id="stage-1-abstract-view">
+<h2>Stage 1: Abstract View<a class="headerlink" href="#stage-1-abstract-view" title="Permalink to this headline">¶</a></h2>
+<p>This phase involves replacing the current abs.pl controller with a Python/Flask
+application. This new application will run behind the existing Apache webserver,
+via mod_wsgi. At the end of phase 1, abs.pl will be replaced with the
+Python/Flask application and the view provided to the browser will be nearly
+identical to the existing abstract page, with the addition of cited references.</p>
+<div class="figure" id="id1">
+<span id="figure-ng-components-browse-phase1"></span><a class="reference external image-reference" href="_static/diagrams/ng-components-browse-phase1.png"><img alt="_static/diagrams/ng-components-browse-phase1.png" src="_static/diagrams/ng-components-browse-phase1.png" /></a>
+<p class="caption"><span class="caption-text">Main components of the browse application in phase 1.</span></p>
+</div>
+<p>The service layer will provide access to the existing network filesystem and
+relational database via a more abstract API. This will involve identifying the
+database and filesystem resources that are used to generate the current abs
+page, and writing components that provide read access to those resources.</p>
+<div class="section" id="document-service-layer">
+<h3>Document Service Layer<a class="headerlink" href="#document-service-layer" title="Permalink to this headline">¶</a></h3>
+<p>The document service layer separates the web application controllers from the
+specific maneuvers needed to wrangle the data needed to generate user-facing
+views. In order to integrate sensibly with Flask, we separate this part of
+the application into two parts: a <code class="docutils literal notranslate"><span class="pre">DocumentServiceSession</span></code> class that
+encapsulates IO operations (including database sessions), and a
+<code class="docutils literal notranslate"><span class="pre">DocumentService</span></code> class that is responsible for associating a specific
+<code class="docutils literal notranslate"><span class="pre">DocumentServiceSession</span></code> instances with a specific application and its
+attendant configuration.</p>
+<p>This component must be implemented such that the lower part can be altered (e.g.
+a new database backend, a different ORM library) without impacting the API
+exposed to the rest of the application. API methods must only accept and return
+“native” Python data types.</p>
+<div class="figure" id="id2">
+<span id="figure-ng-classes-browse-phase1-service"></span><a class="reference external image-reference" href="_static/diagrams/ng-classes-browse-phase1-service.png"><img alt="_static/diagrams/ng-classes-browse-phase1-service.png" src="_static/diagrams/ng-classes-browse-phase1-service.png" /></a>
+<p class="caption"><span class="caption-text">Example architecture of the document service layer component. This is merely
+a rough indication of how the component could be implemented.</span></p>
+</div>
+<div class="section" id="documentservice">
+<h4><code class="docutils literal notranslate"><span class="pre">DocumentService</span></code><a class="headerlink" href="#documentservice" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">DocumentService</span></code> component is a class that implements the Flask
+extension pattern. See <a class="reference external" href="http://flask.pocoo.org/docs/0.12/extensiondev/#the-extension-code">this example</a>. The
+class should have the following methods:</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">__init__(self,</span> <span class="pre">app=None)</span></code></dt>
+<dd>Sets <code class="docutils literal notranslate"><span class="pre">self.app</span></code> to the passed Flask app instance, and calls <code class="docutils literal notranslate"><span class="pre">init_app</span></code>.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">init_app(self,</span> <span class="pre">app)</span></code></dt>
+<dd>Sets defaults for relevant configuration variables on the Flask app
+instance. This should include the database URL (see
+<a class="reference external" href="https://www.12factor.net/backing-services">https://www.12factor.net/backing-services</a>), which includes
+authentication details.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">get_session(self)</span></code></dt>
+<dd>Retrieve configuration variables from the app instance, instantiate
+a database connection (e.g. see <a class="reference external" href="http://docs.sqlalchemy.org/en/latest/orm/tutorial.html#creating-a-session">http://docs.sqlalchemy.org/en/latest/orm/tutorial.html#creating-a-session</a>),
+and check that appropriate access to the filesystem is available. It should
+return an instance of a <code class="docutils literal notranslate"><span class="pre">DocumentServiceSession</span></code> which provides the
+appropriate read methods.</dd>
+</dl>
+<p>In addition, a property called <code class="docutils literal notranslate"><span class="pre">session</span></code> should provide access to the
+appropriate <code class="docutils literal notranslate"><span class="pre">DocumentServiceSession</span></code> instance using the <a class="reference external" href="http://flask.pocoo.org/docs/0.12/appcontext/">Flask application
+context stack</a>. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">_app_ctx_stack</span> <span class="k">as</span> <span class="n">stack</span>
+
+
+<span class="k">class</span> <span class="nc">DocumentService</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">session</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">top</span>
+        <span class="k">if</span> <span class="n">ctx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="s1">&#39;document_session&#39;</span><span class="p">):</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">document_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_session</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">ctx</span><span class="o">.</span><span class="n">document_session</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_session</span><span class="p">()</span>     <span class="c1"># No application context.</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="documentservicesession">
+<h4><code class="docutils literal notranslate"><span class="pre">DocumentServiceSession</span></code><a class="headerlink" href="#documentservicesession" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">DocumentServiceSession</span></code> class is the glue between the application and
+the data sources that back the abstract page. It uses a combination of
+filesystem operations and SQL queries to retrieve relevant data for use by
+the controller backing the main <code class="docutils literal notranslate"><span class="pre">abs</span></code> route.</p>
+<p>In order to decouple the lower-level implementation details from its
+higher-level behavior, <code class="docutils literal notranslate"><span class="pre">DocumentServiceSession</span></code> must only expose/return
+native Python data types.</p>
+<p>Similarly, any exceptions raised by lower-level packages (e.g. SQLAlchemy)
+should be handled internally; exceptions <strong>may</strong> be propagated upward, but
+<strong>must</strong> be re-instantiated as either native Python exceptions or subclasses of
+those exceptions provided in the same namespace as the
+<code class="docutils literal notranslate"><span class="pre">DocumentServiceSession</span></code> class. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sqlalchemy.orm.exc</span> <span class="k">import</span> <span class="n">ConcurrentModificationError</span>
+
+
+<span class="k">class</span> <span class="nc">DocumentServiceSession</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">....</span><span class="p">):</span>
+        <span class="o">...</span>
+        <span class="k">try</span><span class="p">:</span>
+           <span class="o">...</span>
+        <span class="k">except</span> <span class="n">ConcurrentModificationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+           <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;Consistency problems: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+</pre></div>
+</div>
+<p>An ORM abstraction (e.g. via SQLAlchemy) may be used to perform SQL queries.
+Any “model” classes must be available to the <code class="docutils literal notranslate"><span class="pre">DocumentServiceSession</span></code>
+class (e.g. in the same module).</p>
+</div>
+</div>
+<div class="section" id="application-factory-configuration">
+<h3>Application Factory &amp; Configuration<a class="headerlink" href="#application-factory-configuration" title="Permalink to this headline">¶</a></h3>
+<p>The configuration module (<code class="docutils literal notranslate"><span class="pre">config.py</span></code>) should define any relevant Flask
+configuration parameters, plus any additional parameters for database
+connections, logging, etc. See <a class="reference external" href="http://flask.pocoo.org/docs/0.12/config/">http://flask.pocoo.org/docs/0.12/config/</a>.</p>
+<p>The browse application should include a module called <code class="docutils literal notranslate"><span class="pre">factory</span></code> containing an
+application factory function called <code class="docutils literal notranslate"><span class="pre">create_web_app</span></code> (see
+<a class="reference external" href="http://flask.pocoo.org/docs/0.12/patterns/appfactories/">Application Factories</a>). That function
+should instantiate the Flask WSGI application, load the application
+configuration, register any <a class="reference external" href="http://flask.pocoo.org/docs/0.12/blueprints/#blueprints">blueprints</a>, and return the
+Flask application object.</p>
+<p>For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">create_web_app</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Initialize an instance of the web application.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">browse.routes</span> <span class="kn">import</span> <span class="n">rest</span>
+
+    <span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="s1">&#39;browse&#39;</span><span class="p">,</span> <span class="n">static_folder</span><span class="o">=</span><span class="s1">&#39;web/static&#39;</span><span class="p">,</span>
+                <span class="n">template_folder</span><span class="o">=</span><span class="s1">&#39;web/templates&#39;</span><span class="p">)</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">from_pyfile</span><span class="p">(</span><span class="s1">&#39;config.py&#39;</span><span class="p">)</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">register_blueprint</span><span class="p">(</span><span class="n">rest</span><span class="o">.</span><span class="n">blueprint</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">app</span>
+</pre></div>
+</div>
+<p>The WSGI module called by Apache should be a Python script called
+<code class="docutils literal notranslate"><span class="pre">browse.wsgi</span></code>, located at the root of the project. It should define a single
+function called <code class="docutils literal notranslate"><span class="pre">application</span></code> that calls <code class="docutils literal notranslate"><span class="pre">factory.create_web_app</span></code>. In
+order to populate the application’s runtime environment with configuration
+parameters, it should set those parameters in <code class="docutils literal notranslate"><span class="pre">os.environ</span></code> using the values
+passed by mod_wsgi. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">browse.factory</span> <span class="kn">import</span> <span class="n">create_web_app</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="k">def</span> <span class="nf">application</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
+     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">environ</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+         <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+     <span class="k">return</span> <span class="n">create_web_app</span><span class="p">()(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="routes">
+<h3>Routes<a class="headerlink" href="#routes" title="Permalink to this headline">¶</a></h3>
+<p>The routes module should be used to define the blueprint(s) for the
+application. That module is responsible for passing relevant parameters
+from the request context to controllers, and rendering/serializing data
+returned by the controllers for return to clients. In order to facilitate
+unit tests significant business logic should reside in the controller
+module, <strong>not</strong> in the routes module.</p>
+<p>For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Blueprint</span><span class="p">,</span> <span class="n">render_template</span>
+<span class="kn">from</span> <span class="nn">browse.controllers</span> <span class="kn">import</span> <span class="n">retrieve_document_metadata</span>
+<span class="n">blueprint</span> <span class="o">=</span> <span class="n">Blueprint</span><span class="p">(</span><span class="s1">&#39;browse&#39;</span><span class="p">,</span> <span class="vm">__name__</span><span class="p">,</span> <span class="n">url_prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+
+<span class="nd">@blueprint.route</span><span class="p">(</span><span class="s1">&#39;/abs/&lt;string:document_id&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">abs</span><span class="p">(</span><span class="n">document_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="n">document_metadata</span><span class="p">,</span> <span class="n">status</span> <span class="o">=</span> <span class="n">retrieve_document_metadata</span><span class="p">(</span><span class="n">document_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;abs.html&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">document_metadata</span><span class="p">),</span> <span class="n">status</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="controllers">
+<h3>Controllers<a class="headerlink" href="#controllers" title="Permalink to this headline">¶</a></h3>
+<p>Controllers should be implemented in a separate module. These can be classes
+or functions that handle request parameters from the routes, and return data
+needed to build responses/views.</p>
+<p>Since we are using the Flask factory pattern, the <code class="docutils literal notranslate"><span class="pre">current_app</span></code> proxy object
+should be used to access the application instance. For example, to instantiate
+the <code class="docutils literal notranslate"><span class="pre">DocumentService</span></code>. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">current_app</span>
+<span class="kn">from</span> <span class="nn">browse.services</span> <span class="kn">import</span> <span class="n">DocumentService</span>
+<span class="kn">from</span> <span class="nn">browse</span> <span class="kn">import</span> <span class="n">status</span>
+
+
+<span class="k">def</span> <span class="nf">retrieve_document_metadata</span><span class="p">(</span><span class="n">document_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="o">...</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">service</span> <span class="o">=</span> <span class="n">DocumentService</span><span class="p">(</span><span class="n">current_app</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>   <span class="c1"># Raised when there is no application context.</span>
+        <span class="n">service</span> <span class="o">=</span> <span class="n">DocumentService</span><span class="p">()</span>
+    <span class="o">...</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">session</span>
+    <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>    <span class="c1"># Service layer raises only native exceptions.</span>
+         <span class="k">return</span> <span class="p">{</span>
+             <span class="s1">&#39;explanation&#39;</span><span class="p">:</span> <span class="s1">&#39;Could not access the database.&#39;</span>
+         <span class="p">},</span> <span class="n">status</span><span class="o">.</span><span class="n">HTTP_500_INTERNAL_SERVER_ERROR</span>
+</pre></div>
+</div>
+<p>In the example above, the controller returns both a data payload and an HTTP
+status code (int).</p>
+</div>
+<div class="section" id="layout">
+<h3>Layout<a class="headerlink" href="#layout" title="Permalink to this headline">¶</a></h3>
+<p>The following layout would be consistent with the constraints described above.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.
+├── README.md
+├── browse.wsgi
+├── browse
+│   ├── __init__.py
+│   ├── factory.py
+│   ├── config.py
+│   ├── routes.py
+│   ├── controllers.py
+│   └── services
+│       ├── __init__.py
+│       ├── sql.py
+│       └── filesystem.py
+├── requirements.txt
+├── templates
+│   └── abs.html
+└── tests
+    ├── __init__.py
+    ├── test_controllers.py
+    └── test_document_service.py
+</pre></div>
+</div>
+<p>This is only a rough guide, and should be modified as needed.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Browse Application Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#stage-1-abstract-view">Stage 1: Abstract View</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#document-service-layer">Document Service Layer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#application-factory-configuration">Application Factory &amp; Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#routes">Routes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#controllers">Controllers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#layout">Layout</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to arXiv Browse Service’s documentation!</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/architecture.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

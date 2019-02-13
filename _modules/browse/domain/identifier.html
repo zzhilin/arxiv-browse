@@ -1,0 +1,318 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.domain.identifier &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for browse.domain.identifier</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Base domain classes for browse service.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">re</span> <span class="k">import</span> <span class="n">RegexFlag</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Match</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">arxiv</span> <span class="k">import</span> <span class="n">taxonomy</span>
+<span class="kn">from</span> <span class="nn">arxiv.base.config</span> <span class="k">import</span> <span class="n">BASE_SERVER</span><span class="p">,</span> <span class="n">EXTERNAL_URL_SCHEME</span>
+
+<span class="c1"># arXiv ID format used from 1991 to 2007-03</span>
+<span class="n">RE_ARXIV_OLD_ID</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;^(?P&lt;archive&gt;[a-z]{1,}(\-[a-z]{2,})?)(\.([a-zA-Z\-]{2,}))?\/&#39;</span>
+    <span class="sa">r</span><span class="s1">&#39;(?P&lt;yymm&gt;(?P&lt;yy&gt;\d\d)(?P&lt;mm&gt;\d\d))(?P&lt;num&gt;\d\d\d)&#39;</span>
+    <span class="sa">r</span><span class="s1">&#39;(v(?P&lt;version&gt;[1-9]\d*))?([#\/].*)?$&#39;</span><span class="p">)</span>
+
+<span class="c1"># arXiv ID format used from 2007-04 to present</span>
+<span class="n">RE_ARXIV_NEW_ID</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;^(?P&lt;yymm&gt;(?P&lt;yy&gt;\d\d)(?P&lt;mm&gt;\d\d))\.(?P&lt;num&gt;\d{4,5})&#39;</span>
+    <span class="sa">r</span><span class="s1">&#39;(v(?P&lt;version&gt;[1-9]\d*))?([#\/].*)?$&#39;</span>
+<span class="p">)</span>
+
+<span class="n">Sub_type</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Match</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="nb">str</span><span class="p">]],</span>
+                      <span class="nb">int</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">RegexFlag</span><span class="p">]]]</span>
+<span class="n">SUBSTITUTIONS</span><span class="p">:</span> <span class="n">Sub_type</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># pattern, replacement, count, flags</span>
+    <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\.(pdf|ps|gz|ps\.gz)$&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^/&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^arxiv:&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">),</span>
+    <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;//+&#39;</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;--+&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^([^/]+)&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([^a\-])(ph|ex|th|qc|mat|lat|sci)(\/|$)&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\g&lt;1&gt;-\g&lt;2&gt;\g&lt;3&gt;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="IdentifierException"><a class="viewcode-back" href="../../../api/browse.domain.identifier.html#browse.domain.identifier.IdentifierException">[docs]</a><span class="k">class</span> <span class="nc">IdentifierException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Error class for general arXiv identifier exceptions.&quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="IdentifierIsArchiveException"><a class="viewcode-back" href="../../../api/browse.domain.identifier.html#browse.domain.identifier.IdentifierIsArchiveException">[docs]</a><span class="k">class</span> <span class="nc">IdentifierIsArchiveException</span><span class="p">(</span><span class="n">IdentifierException</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Error class for case where supplied arXiv identifier is an archive.&quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Identifier"><a class="viewcode-back" href="../../../api/browse.domain.identifier.html#browse.domain.identifier.Identifier">[docs]</a><span class="k">class</span> <span class="nc">Identifier</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class for arXiv identifiers of published papers.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arxiv_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Attempt to validate the provided arXiv ID.</span>
+
+<span class="sd">        Parse constituent parts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ids</span> <span class="o">=</span> <span class="n">arxiv_id</span>
+        <span class="sd">&quot;&quot;&quot;The ID as specified.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">arxiv_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">archive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">year</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ids</span> <span class="ow">in</span> <span class="n">taxonomy</span><span class="o">.</span><span class="n">ARCHIVES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">IdentifierIsArchiveException</span><span class="p">(</span>
+                <span class="n">taxonomy</span><span class="o">.</span><span class="n">ARCHIVES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">subtup</span> <span class="ow">in</span> <span class="n">SUBSTITUTIONS</span><span class="p">:</span>
+            <span class="n">arxiv_id</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">subtup</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                              <span class="n">subtup</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                              <span class="n">arxiv_id</span><span class="p">,</span>
+                              <span class="n">count</span><span class="o">=</span><span class="n">subtup</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                              <span class="n">flags</span><span class="o">=</span><span class="n">subtup</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">parse_actions</span> <span class="o">=</span> <span class="p">((</span><span class="n">RE_ARXIV_OLD_ID</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_old_id</span><span class="p">),</span>
+                         <span class="p">(</span><span class="n">RE_ARXIV_NEW_ID</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_new_id</span><span class="p">))</span>
+
+        <span class="n">id_match</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">regex</span><span class="p">,</span> <span class="n">parse_action</span> <span class="ow">in</span> <span class="n">parse_actions</span><span class="p">:</span>
+            <span class="n">id_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">arxiv_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">id_match</span><span class="p">:</span>
+                <span class="n">parse_action</span><span class="p">(</span><span class="n">id_match</span><span class="p">)</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">id_match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">IdentifierException</span><span class="p">(</span>
+                <span class="n">f</span><span class="s1">&#39;invalid arXiv identifier </span><span class="si">{self.ids}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">id_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">IdentifierException</span><span class="p">(</span><span class="s1">&#39;arXiv identifier is empty&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">IdentifierException</span><span class="p">(</span><span class="s1">&#39;year is empty&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num</span> <span class="o">==</span> <span class="mi">0</span> \
+               <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num</span> <span class="o">&gt;</span> <span class="mi">99999</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="mi">2015</span><span class="p">)</span> \
+               <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num</span> <span class="o">&gt;</span> <span class="mi">9999</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="mi">2015</span><span class="p">)</span> \
+               <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num</span> <span class="o">&gt;</span> <span class="mi">999</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">IdentifierException</span><span class="p">(</span>
+                    <span class="s1">&#39;invalid arXiv identifier </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ids</span><span class="p">)</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_version</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idv</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">if</span> <span class="n">id_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">id_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">idv</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{self.id}</span><span class="s1">v</span><span class="si">{self.version}</span><span class="s1">&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_version</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">squashed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">squashedv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idv</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yymm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">id_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;yymm&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">id_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;mm&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">&gt;</span> <span class="mi">12</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">IdentifierException</span><span class="p">(</span>
+                <span class="n">f</span><span class="s1">&#39;invalid arXiv identifier </span><span class="si">{self.ids}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="mi">1991</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;</span> <span class="mi">2007</span> \
+               <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">==</span> <span class="mi">2007</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">IdentifierException</span><span class="p">(</span>
+                    <span class="n">f</span><span class="s1">&#39;invalid arXiv identifier </span><span class="si">{self.ids}</span><span class="s1">&#39;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="mi">2007</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">==</span> <span class="mi">2007</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">month</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">IdentifierException</span><span class="p">(</span>
+                    <span class="n">f</span><span class="s1">&#39;invalid arXiv identifier </span><span class="si">{self.ids}</span><span class="s1">&#39;</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_old_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">match_obj</span><span class="p">:</span> <span class="n">Match</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Populate instance attributes parsed from old arXiv identifier.</span>
+
+<span class="sd">        The old identifiers were minted from 1991 until March 2007.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        match_obj : Match[str]</span>
+<span class="sd">            A regex match on RE_ARXIV_OLD_ID</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_old_id</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">archive</span> <span class="o">=</span> <span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;archive&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;yy&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1900</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">+=</span> <span class="mi">100</span> <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;yy&#39;</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">91</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}{:03d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;yymm&#39;</span><span class="p">),</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{self.archive}</span><span class="s1">/</span><span class="si">{self.filename}</span><span class="s1">&#39;</span>
+
+    <span class="k">def</span> <span class="nf">_parse_new_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">match_obj</span><span class="p">:</span> <span class="n">Match</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Populate instance attributes from a new arXiv identifier.</span>
+
+<span class="sd">        New identifiers started 2007-04 with 4-digit suffix;</span>
+<span class="sd">        starting 2015 they have a 5-digit suffix.</span>
+<span class="sd">        e.g. 0704.1234</span>
+<span class="sd">             1412.0001</span>
+<span class="sd">             1501.00001</span>
+<span class="sd">             1711.01234</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        match_obj : Match[str]</span>
+<span class="sd">            A regex match on RE_ARXIV_NEW_ID</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_old_id</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">archive</span> <span class="o">=</span> <span class="s1">&#39;arxiv&#39;</span>
+        <span class="c1"># NB: this works only until 2099</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;yy&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2000</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="mi">2015</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:04d}</span><span class="s1">.</span><span class="si">{:05d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;yymm&#39;</span><span class="p">)),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:04d}</span><span class="s1">.</span><span class="si">{:04d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;yymm&#39;</span><span class="p">)),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">match_obj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the string representation of the instance in json.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="k">lambda</span> <span class="n">o</span><span class="p">:</span> <span class="n">o</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">,</span>
+                          <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the instance representation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">f</span><span class="s2">&quot;Identifier(arxiv_id=&#39;</span><span class="si">{self.ids}</span><span class="s2">&#39;)&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return instance equality: other should be type &lt;= Instance.</span>
+
+<span class="sd">        Note that &#39;other&#39; can&#39;t be statically checked to be type Instance</span>
+<span class="sd">        by design: https://stackoverflow.com/a/37557540/3096687</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

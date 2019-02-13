@@ -1,0 +1,227 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.controllers.list_page module &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-browse.controllers.list_page">
+<span id="browse-controllers-list-page-module"></span><h1>browse.controllers.list_page module<a class="headerlink" href="#module-browse.controllers.list_page" title="Permalink to this headline">¶</a></h1>
+<p>Handle requests for the /list pages.</p>
+<p>/list requests will show a list of articles for a category for a given
+time period.</p>
+<p>The primary entrypoint to this module is <code class="xref py py-func docutils literal notranslate"><span class="pre">get_list_page()</span></code>, which
+handles GET and POST requests to the list endpoint.</p>
+<p>This should handle requests like:
+/list/$category/YYMM
+/list/$category/YYMM
+/list/category/recent
+/list/category/YYMM?skip=n&amp;show=n
+/list/archive/new|recent|pastweek
+/list/archive/YY
+/list/$category/YY</p>
+<p>Examples of odd requests to throw out:
+/list/?400
+/list/cs/14?skip=%25CRAZYSTUFF
+/list/1801.00023</p>
+<p>1. Figure out what category and time_period is being requested. It’s
+either a POST or GET with params about what to get OR it’s all in the
+path.</p>
+<p>Things to figure out:
+A: what subject category is being requested
+B: time period aka listing_type: ‘pastweek’ ‘new’ ‘current’ ‘pastyear’
+C: show_abstracts only if listing_type=’new’</p>
+<ol class="arabic simple" start="2">
+<li>Query the listing service for that category and time_period</li>
+<li>Check for not modified.</li>
+<li>Disply the page</li>
+</ol>
+<p>Differences from legacy arxiv:
+Doesn’t handle the /view path.</p>
+<dl class="function">
+<dt id="browse.controllers.list_page.author_links">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">author_links</code><span class="sig-paren">(</span><em>abs_meta: browse.domain.metadata.DocMetadata</em><span class="sig-paren">)</span> &#x2192; Tuple[List[Union[str, Tuple[str, str]]], List[Union[str, Tuple[str, str]]], int]<a class="reference internal" href="../_modules/browse/controllers/list_page.html#author_links"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.controllers.list_page.author_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates author list links in a very similar way to abs page.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.controllers.list_page.authors_for_articles">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">authors_for_articles</code><span class="sig-paren">(</span><em>listings: List[Any]</em><span class="sig-paren">)</span> &#x2192; Dict[str, Any]<a class="reference internal" href="../_modules/browse/controllers/list_page.html#authors_for_articles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.controllers.list_page.authors_for_articles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a Dict of article id to author links.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="browse.controllers.list_page.default_show">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">default_show</code><em class="property"> = 25</em><a class="headerlink" href="#browse.controllers.list_page.default_show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default value for show.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.controllers.list_page.dl_for_articles">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">dl_for_articles</code><span class="sig-paren">(</span><em>items: List[Any]</em><span class="sig-paren">)</span> &#x2192; Dict[str, Any]<a class="reference internal" href="../_modules/browse/controllers/list_page.html#dl_for_articles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.controllers.list_page.dl_for_articles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the download links for an article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.controllers.list_page.get_listing">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">get_listing</code><span class="sig-paren">(</span><em>subject_or_category: str</em>, <em>time_period: str</em>, <em>skip: str</em>, <em>show: str</em><span class="sig-paren">)</span> &#x2192; Tuple[Dict[str, Any], int, Dict[str, Any]]<a class="reference internal" href="../_modules/browse/controllers/list_page.html#get_listing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.controllers.list_page.get_listing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle requests to list articles.</p>
+<dl class="docutils">
+<dt>subject_or_category</dt>
+<dd>Subject or categtory to get listing for.</dd>
+<dt>time_period</dt>
+<dd>YY or YYMM or ‘recent’ or ‘pastweek’ or ‘new’ or ‘current’.
+recent and pastweek mean the last 5 listings,
+new means the most recent listing,
+current means the listings for the current month.</dd>
+<dt>skip</dt>
+<dd>Number of articles to skip for this subject and time_period.</dd>
+<dt>show</dt>
+<dd>Number of articles to show.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.controllers.list_page.get_listing_service">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">get_listing_service</code><span class="sig-paren">(</span><em>app: Any</em><span class="sig-paren">)</span> &#x2192; browse.services.listing.ListingService<a class="reference internal" href="../_modules/browse/controllers/list_page.html#get_listing_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.controllers.list_page.get_listing_service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the listing service from the Flask app.</p>
+<p>There is probably a better way to do this.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.controllers.list_page.index_for_types">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">index_for_types</code><span class="sig-paren">(</span><em>resp: browse.domain.listing.NewResponse</em>, <em>context: str</em>, <em>subcontext: str</em>, <em>skipn: int</em>, <em>shown: int</em><span class="sig-paren">)</span> &#x2192; Dict[str, Any]<a class="reference internal" href="../_modules/browse/controllers/list_page.html#index_for_types"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.controllers.list_page.index_for_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates index for types of new papers in a NewResponse.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="browse.controllers.list_page.max_show">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">max_show</code><em class="property"> = 2000</em><a class="headerlink" href="#browse.controllers.list_page.max_show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Max value for show that controller respects.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.controllers.list_page.more_fewer">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">more_fewer</code><span class="sig-paren">(</span><em>show: int</em>, <em>count: int</em>, <em>viewing_all: bool</em><span class="sig-paren">)</span> &#x2192; Dict[str, Any]<a class="reference internal" href="../_modules/browse/controllers/list_page.html#more_fewer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.controllers.list_page.more_fewer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Links for the more/fewer sections.</p>
+<p>We want first show_values[n] where show_values[n] &lt; show and
+show_values[n+1] &gt; show</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="browse.controllers.list_page.show_values">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">show_values</code><em class="property"> = [5, 10, 25, 50, 100, 250, 500, 1000, 2000]</em><a class="headerlink" href="#browse.controllers.list_page.show_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>” Values of $show for more/fewer/all.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.controllers.list_page.sub_sections_for_types">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">sub_sections_for_types</code><span class="sig-paren">(</span><em>resp: browse.domain.listing.NewResponse</em>, <em>skipn: int</em>, <em>shown: int</em><span class="sig-paren">)</span> &#x2192; Dict[str, Any]<a class="reference internal" href="../_modules/browse/controllers/list_page.html#sub_sections_for_types"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.controllers.list_page.sub_sections_for_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates data used in section headings on /list/ARCHIVE/new.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.controllers.list_page.year_month">
+<code class="descclassname">browse.controllers.list_page.</code><code class="descname">year_month</code><span class="sig-paren">(</span><em>tp: str</em><span class="sig-paren">)</span> &#x2192; Optional[Tuple[int, Optional[int]]]<a class="reference internal" href="../_modules/browse/controllers/list_page.html#year_month"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.controllers.list_page.year_month" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the year and month from the time_period parameter.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/browse.controllers.list_page.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

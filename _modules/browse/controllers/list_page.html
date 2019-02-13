@@ -1,0 +1,560 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.controllers.list_page &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for browse.controllers.list_page</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Handle requests for the /list pages.</span>
+
+<span class="sd">/list requests will show a list of articles for a category for a given</span>
+<span class="sd">time period.</span>
+
+<span class="sd">The primary entrypoint to this module is :func:`.get_list_page`, which</span>
+<span class="sd">handles GET and POST requests to the list endpoint.</span>
+
+<span class="sd">This should handle requests like:</span>
+<span class="sd">/list/$category/YYMM</span>
+<span class="sd">/list/$category/YYMM</span>
+<span class="sd">/list/category/recent</span>
+<span class="sd">/list/category/YYMM?skip=n&amp;show=n</span>
+<span class="sd">/list/archive/new|recent|pastweek</span>
+<span class="sd">/list/archive/YY</span>
+<span class="sd">/list/$category/YY</span>
+
+<span class="sd">Examples of odd requests to throw out:</span>
+<span class="sd">/list/?400</span>
+<span class="sd">/list/cs/14?skip=%25CRAZYSTUFF</span>
+<span class="sd">/list/1801.00023</span>
+
+<span class="sd">1. Figure out what category and time_period is being requested. It&#39;s</span>
+<span class="sd">either a POST or GET with params about what to get OR it&#39;s all in the</span>
+<span class="sd">path.</span>
+
+<span class="sd">Things to figure out:</span>
+<span class="sd">A: what subject category is being requested</span>
+<span class="sd">B: time period aka listing_type: &#39;pastweek&#39; &#39;new&#39; &#39;current&#39; &#39;pastyear&#39;</span>
+<span class="sd">C: show_abstracts only if listing_type=&#39;new&#39;</span>
+
+<span class="sd">2. Query the listing service for that category and time_period</span>
+
+<span class="sd">3. Check for not modified.</span>
+
+<span class="sd">4. Disply the page</span>
+
+<span class="sd">Differences from legacy arxiv:</span>
+<span class="sd">Doesn&#39;t handle the /view path.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">calendar</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">email.utils</span> <span class="k">import</span> <span class="n">formatdate</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">arxiv</span> <span class="k">import</span> <span class="n">status</span><span class="p">,</span> <span class="n">taxonomy</span>
+<span class="kn">from</span> <span class="nn">dateutil</span> <span class="k">import</span> <span class="n">parser</span>
+<span class="kn">from</span> <span class="nn">dateutil.tz</span> <span class="k">import</span> <span class="n">tzutc</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="k">import</span> <span class="n">current_app</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">url_for</span>
+<span class="kn">from</span> <span class="nn">werkzeug.exceptions</span> <span class="k">import</span> <span class="n">ServiceUnavailable</span><span class="p">,</span> <span class="n">BadRequest</span>
+
+<span class="kn">from</span> <span class="nn">browse.controllers.abs_page</span> <span class="k">import</span> <span class="n">truncate_author_list_size</span>
+<span class="kn">from</span> <span class="nn">browse.controllers.list_page.paging</span> <span class="k">import</span> <span class="n">paging</span>
+<span class="kn">from</span> <span class="nn">browse.domain.metadata</span> <span class="k">import</span> <span class="n">DocMetadata</span>
+<span class="kn">from</span> <span class="nn">browse.services.document</span> <span class="k">import</span> <span class="n">metadata</span>
+<span class="kn">from</span> <span class="nn">browse.services.listing</span> <span class="k">import</span> <span class="n">ListingService</span>
+<span class="kn">from</span> <span class="nn">browse.domain.listing</span> <span class="k">import</span> <span class="n">NewResponse</span><span class="p">,</span> <span class="n">NotModifiedResponse</span><span class="p">,</span> <span class="n">ListingResponse</span>
+<span class="kn">from</span> <span class="nn">browse.services.search.search_authors</span> <span class="k">import</span> <span class="n">queries_for_authors</span><span class="p">,</span> \
+    <span class="n">split_long_author_list</span><span class="p">,</span> <span class="n">AuthorList</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">show_values</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">250</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;&quot; Values of $show for more/fewer/all.&quot;&quot;&quot;</span>
+
+<span class="n">max_show</span> <span class="o">=</span> <span class="n">show_values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Max value for show that controller respects.&quot;&quot;&quot;</span>
+
+<span class="n">default_show</span> <span class="o">=</span> <span class="n">show_values</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;Default value for show.&quot;&quot;&quot;</span>
+
+<span class="n">Response</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+
+<span class="n">type_to_template</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;new&#39;</span><span class="p">:</span> <span class="s1">&#39;list/new.html&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="s1">&#39;list/recent.html&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;current&#39;</span><span class="p">:</span> <span class="s1">&#39;list/month.html&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;month&#39;</span><span class="p">:</span> <span class="s1">&#39;list/month.html&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="s1">&#39;list/year.html&#39;</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="get_listing"><a class="viewcode-back" href="../../../api/browse.controllers.list_page.html#browse.controllers.list_page.get_listing">[docs]</a><span class="k">def</span> <span class="nf">get_listing</span><span class="p">(</span>
+        <span class="n">subject_or_category</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">time_period</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">skip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">show</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Handle requests to list articles.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    subject_or_category</span>
+<span class="sd">       Subject or categtory to get listing for.</span>
+<span class="sd">    time_period</span>
+<span class="sd">       YY or YYMM or &#39;recent&#39; or &#39;pastweek&#39; or &#39;new&#39; or &#39;current&#39;.</span>
+<span class="sd">       recent and pastweek mean the last 5 listings,</span>
+<span class="sd">       new means the most recent listing,</span>
+<span class="sd">       current means the listings for the current month.</span>
+<span class="sd">    skip</span>
+<span class="sd">       Number of articles to skip for this subject and time_period.</span>
+<span class="sd">    show</span>
+<span class="sd">       Number of articles to show.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO make sure to handle POST too</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">subject_or_category</span> <span class="ow">or</span>
+            <span class="ow">not</span> <span class="p">(</span><span class="n">time_period</span> <span class="ow">and</span>
+                 <span class="p">(</span><span class="n">time_period</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="ow">or</span>
+                  <span class="n">time_period</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;new&#39;</span><span class="p">,</span> <span class="s1">&#39;current&#39;</span><span class="p">,</span> <span class="s1">&#39;pastweek&#39;</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">]))):</span>
+        <span class="k">raise</span> <span class="n">BadRequest</span>
+
+    <span class="k">if</span> <span class="n">subject_or_category</span> <span class="ow">in</span> <span class="n">taxonomy</span><span class="o">.</span><span class="n">CATEGORIES</span><span class="p">:</span>
+        <span class="n">list_type</span> <span class="o">=</span> <span class="s1">&#39;category&#39;</span>
+        <span class="n">list_ctx_name</span> <span class="o">=</span> <span class="n">taxonomy</span><span class="o">.</span><span class="n">CATEGORIES</span><span class="p">[</span><span class="n">subject_or_category</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="n">list_ctx_id</span> <span class="o">=</span> <span class="n">subject_or_category</span>
+        <span class="n">list_ctx_in_archive</span> <span class="o">=</span> <span class="n">taxonomy</span><span class="o">.</span><span class="n">CATEGORIES</span><span class="p">[</span><span class="n">subject_or_category</span><span class="p">][</span><span class="s1">&#39;in_archive&#39;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">subject_or_category</span> <span class="ow">in</span> <span class="n">taxonomy</span><span class="o">.</span><span class="n">ARCHIVES</span><span class="p">:</span>
+        <span class="n">list_type</span> <span class="o">=</span> <span class="s1">&#39;archive&#39;</span>
+        <span class="n">list_ctx_id</span> <span class="o">=</span> <span class="n">subject_or_category</span>
+        <span class="n">list_ctx_name</span> <span class="o">=</span> <span class="n">taxonomy</span><span class="o">.</span><span class="n">ARCHIVES</span><span class="p">[</span><span class="n">subject_or_category</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="n">list_ctx_in_archive</span> <span class="o">=</span> <span class="n">list_ctx_name</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">BadRequest</span>
+
+    <span class="n">listing_service</span> <span class="o">=</span> <span class="n">get_listing_service</span><span class="p">(</span><span class="n">current_app</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">listing_service</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ServiceUnavailable</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">skip</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">skip</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+        <span class="n">skipn</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">skipn</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">skip</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">show</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">show</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">time_period</span> <span class="o">==</span> <span class="s1">&#39;new&#39;</span><span class="p">:</span>
+            <span class="n">shown</span> <span class="o">=</span> <span class="n">max_show</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">shown</span> <span class="o">=</span> <span class="n">default_show</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">shown</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">show</span><span class="p">),</span> <span class="n">max_show</span><span class="p">)</span>
+
+    <span class="n">if_mod_since</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;If-Modified-Since&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">response_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">response_headers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">time_period</span> <span class="o">==</span> <span class="s1">&#39;new&#39;</span><span class="p">:</span>
+        <span class="n">list_type</span> <span class="o">=</span> <span class="s1">&#39;new&#39;</span>
+        <span class="n">new_resp</span> <span class="o">=</span> <span class="n">listing_service</span><span class="o">.</span><span class="n">list_new_articles</span><span class="p">(</span>
+            <span class="n">subject_or_category</span><span class="p">,</span> <span class="n">skipn</span><span class="p">,</span> <span class="n">shown</span><span class="p">,</span> <span class="n">if_mod_since</span><span class="p">)</span>
+        <span class="n">response_headers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_expires_headers</span><span class="p">(</span><span class="n">new_resp</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">_not_modified</span><span class="p">(</span><span class="n">new_resp</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{},</span> <span class="n">status</span><span class="o">.</span><span class="n">HTTP_304_NOT_MODIFIED</span><span class="p">,</span> <span class="n">response_headers</span>
+        <span class="n">listings</span> <span class="o">=</span> <span class="n">new_resp</span><span class="p">[</span><span class="s1">&#39;listings&#39;</span><span class="p">]</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">new_resp</span><span class="p">[</span><span class="s1">&#39;new_count&#39;</span><span class="p">]</span> <span class="o">+</span> \
+            <span class="n">new_resp</span><span class="p">[</span><span class="s1">&#39;rep_count&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">new_resp</span><span class="p">[</span><span class="s1">&#39;cross_count&#39;</span><span class="p">]</span>
+        <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;announced&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_resp</span><span class="p">[</span><span class="s1">&#39;announced&#39;</span><span class="p">]</span>
+        <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;submitted&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_resp</span><span class="p">[</span><span class="s1">&#39;submitted&#39;</span><span class="p">]</span>
+        <span class="n">response_data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="n">index_for_types</span><span class="p">(</span><span class="n">new_resp</span><span class="p">,</span> <span class="n">subject_or_category</span><span class="p">,</span> <span class="n">time_period</span><span class="p">,</span> <span class="n">skipn</span><span class="p">,</span> <span class="n">shown</span><span class="p">))</span>
+        <span class="n">response_data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sub_sections_for_types</span><span class="p">(</span><span class="n">new_resp</span><span class="p">,</span> <span class="n">skipn</span><span class="p">,</span> <span class="n">shown</span><span class="p">))</span>
+
+    <span class="k">elif</span> <span class="n">time_period</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;pastweek&#39;</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">]:</span>
+        <span class="n">list_type</span> <span class="o">=</span> <span class="s1">&#39;recent&#39;</span>
+        <span class="n">rec_resp</span> <span class="o">=</span> <span class="n">listing_service</span><span class="o">.</span><span class="n">list_pastweek_articles</span><span class="p">(</span>
+            <span class="n">subject_or_category</span><span class="p">,</span> <span class="n">skipn</span><span class="p">,</span> <span class="n">shown</span><span class="p">,</span> <span class="n">if_mod_since</span><span class="p">)</span>
+        <span class="n">response_headers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_expires_headers</span><span class="p">(</span><span class="n">rec_resp</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">_not_modified</span><span class="p">(</span><span class="n">rec_resp</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{},</span> <span class="n">status</span><span class="o">.</span><span class="n">HTTP_304_NOT_MODIFIED</span><span class="p">,</span> <span class="n">response_headers</span>
+        <span class="n">listings</span> <span class="o">=</span> <span class="n">rec_resp</span><span class="p">[</span><span class="s1">&#39;listings&#39;</span><span class="p">]</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">rec_resp</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
+        <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;pubdates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rec_resp</span><span class="p">[</span><span class="s1">&#39;pubdates&#39;</span><span class="p">]</span>
+
+    <span class="k">elif</span> <span class="n">time_period</span> <span class="o">==</span> <span class="s1">&#39;current&#39;</span><span class="p">:</span>
+        <span class="n">list_type</span> <span class="o">=</span> <span class="s1">&#39;current&#39;</span>
+        <span class="n">cur_resp</span> <span class="o">=</span> <span class="n">listing_service</span><span class="o">.</span><span class="n">list_articles_by_month</span><span class="p">(</span>
+            <span class="n">subject_or_category</span><span class="p">,</span> <span class="mi">1999</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">skipn</span><span class="p">,</span> <span class="n">shown</span><span class="p">,</span> <span class="n">if_mod_since</span><span class="p">)</span>
+        <span class="n">response_headers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_expires_headers</span><span class="p">(</span><span class="n">cur_resp</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">_not_modified</span><span class="p">(</span><span class="n">cur_resp</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{},</span> <span class="n">status</span><span class="o">.</span><span class="n">HTTP_304_NOT_MODIFIED</span><span class="p">,</span> <span class="n">response_headers</span>
+        <span class="n">listings</span> <span class="o">=</span> <span class="n">cur_resp</span><span class="p">[</span><span class="s1">&#39;listings&#39;</span><span class="p">]</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">cur_resp</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
+        <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;pubmonth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cur_resp</span><span class="p">[</span><span class="s1">&#39;pubdates&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># YYMM or YYYYMM?</span>
+        <span class="n">yandm</span> <span class="o">=</span> <span class="n">year_month</span><span class="p">(</span><span class="n">time_period</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">yandm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadRequest</span>
+        <span class="n">list_year</span><span class="p">,</span> <span class="n">list_month</span> <span class="o">=</span> <span class="n">yandm</span>
+        <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;list_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_period</span>
+        <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;list_year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">list_year</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">list_month</span> <span class="ow">or</span> <span class="n">list_month</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">list_month</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">list_month</span> <span class="o">&gt;</span> <span class="mi">12</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BadRequest</span>
+            <span class="n">list_type</span> <span class="o">=</span> <span class="s1">&#39;month&#39;</span>
+            <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;list_month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">list_month</span><span class="p">)</span>
+            <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;list_month_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calendar</span><span class="o">.</span><span class="n">month_abbr</span><span class="p">[</span><span class="n">list_month</span><span class="p">]</span>
+            <span class="n">month_reps</span> <span class="o">=</span> <span class="n">listing_service</span><span class="o">.</span><span class="n">list_articles_by_month</span><span class="p">(</span>
+                <span class="n">subject_or_category</span><span class="p">,</span> <span class="n">list_year</span><span class="p">,</span> <span class="n">list_month</span><span class="p">,</span> <span class="n">skipn</span><span class="p">,</span> <span class="n">shown</span><span class="p">,</span> <span class="n">if_mod_since</span><span class="p">)</span>
+            <span class="n">response_headers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_expires_headers</span><span class="p">(</span><span class="n">month_reps</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">_not_modified</span><span class="p">(</span><span class="n">month_reps</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{},</span> <span class="n">status</span><span class="o">.</span><span class="n">HTTP_304_NOT_MODIFIED</span><span class="p">,</span> <span class="n">response_headers</span>
+            <span class="n">listings</span> <span class="o">=</span> <span class="n">month_reps</span><span class="p">[</span><span class="s1">&#39;listings&#39;</span><span class="p">]</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="n">month_reps</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
+            <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;pubmonth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">month_reps</span><span class="p">[</span><span class="s1">&#39;pubdates&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">list_type</span> <span class="o">=</span> <span class="s1">&#39;year&#39;</span>
+            <span class="n">year_resp</span> <span class="o">=</span> <span class="n">listing_service</span><span class="o">.</span><span class="n">list_articles_by_year</span><span class="p">(</span>
+                <span class="n">subject_or_category</span><span class="p">,</span> <span class="n">list_year</span><span class="p">,</span> <span class="n">skipn</span><span class="p">,</span> <span class="n">shown</span><span class="p">,</span> <span class="n">if_mod_since</span><span class="p">)</span>
+            <span class="n">response_headers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_expires_headers</span><span class="p">(</span><span class="n">year_resp</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">_not_modified</span><span class="p">(</span><span class="n">year_resp</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{},</span> <span class="n">status</span><span class="o">.</span><span class="n">HTTP_304_NOT_MODIFIED</span><span class="p">,</span> <span class="n">response_headers</span>
+            <span class="n">listings</span> <span class="o">=</span> <span class="n">year_resp</span><span class="p">[</span><span class="s1">&#39;listings&#39;</span><span class="p">]</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="n">year_resp</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
+            <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;pubmonth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">year_resp</span><span class="p">[</span><span class="s1">&#39;pubdates&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># TODO if it is a HEAD, and nothing has changed, send not modified</span>
+
+    <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">listings</span><span class="p">:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">item</span><span class="p">[</span><span class="s1">&#39;article&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get_abs</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
+        <span class="n">item</span><span class="p">[</span><span class="s1">&#39;list_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">+</span> <span class="n">skipn</span>  <span class="c1"># type: ignore</span>
+
+    <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;listings&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">listings</span>
+    <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;author_links&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">authors_for_articles</span><span class="p">(</span><span class="n">listings</span><span class="p">)</span>
+    <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;downloads&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dl_for_articles</span><span class="p">(</span><span class="n">listings</span><span class="p">)</span>
+
+    <span class="n">response_data</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="n">subject_or_category</span><span class="p">,</span>
+        <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="n">count</span><span class="p">,</span>
+        <span class="s1">&#39;subcontext&#39;</span><span class="p">:</span> <span class="n">time_period</span><span class="p">,</span>
+        <span class="s1">&#39;shown&#39;</span><span class="p">:</span> <span class="n">shown</span><span class="p">,</span>
+        <span class="s1">&#39;skipn&#39;</span><span class="p">:</span> <span class="n">skipn</span><span class="p">,</span>
+        <span class="s1">&#39;list_type&#39;</span><span class="p">:</span> <span class="n">list_type</span><span class="p">,</span>
+        <span class="s1">&#39;list_ctx_name&#39;</span><span class="p">:</span> <span class="n">list_ctx_name</span><span class="p">,</span>
+        <span class="s1">&#39;list_ctx_id&#39;</span><span class="p">:</span> <span class="n">list_ctx_id</span><span class="p">,</span>
+        <span class="s1">&#39;list_ctx_in_archive&#39;</span><span class="p">:</span> <span class="n">list_ctx_in_archive</span><span class="p">,</span>
+        <span class="s1">&#39;paging&#39;</span><span class="p">:</span> <span class="n">paging</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">skipn</span><span class="p">,</span> <span class="n">shown</span><span class="p">,</span>
+                         <span class="n">subject_or_category</span><span class="p">,</span> <span class="n">time_period</span><span class="p">),</span>
+        <span class="s1">&#39;viewing_all&#39;</span><span class="p">:</span> <span class="n">shown</span> <span class="o">&gt;=</span> <span class="n">count</span><span class="p">,</span>
+        <span class="s1">&#39;template&#39;</span><span class="p">:</span> <span class="n">type_to_template</span><span class="p">[</span><span class="n">list_type</span><span class="p">]</span>
+    <span class="p">})</span>
+
+    <span class="n">response_data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">more_fewer</span><span class="p">(</span><span class="n">shown</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">shown</span> <span class="o">&gt;=</span> <span class="n">count</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">author_query</span><span class="p">(</span><span class="n">article</span><span class="p">:</span> <span class="n">DocMetadata</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;search_archive&#39;</span><span class="p">,</span>
+                           <span class="n">searchtype</span><span class="o">=</span><span class="s1">&#39;author&#39;</span><span class="p">,</span>
+                           <span class="n">archive</span><span class="o">=</span><span class="n">article</span><span class="o">.</span><span class="n">primary_archive</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                           <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">))</span>
+    <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;url_for_author_search&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">author_query</span>
+
+    <span class="k">return</span> <span class="n">response_data</span><span class="p">,</span> <span class="n">status</span><span class="o">.</span><span class="n">HTTP_200_OK</span><span class="p">,</span> <span class="n">response_headers</span></div>
+
+
+<div class="viewcode-block" id="get_listing_service"><a class="viewcode-back" href="../../../api/browse.controllers.list_page.html#browse.controllers.list_page.get_listing_service">[docs]</a><span class="k">def</span> <span class="nf">get_listing_service</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ListingService</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Get the listing service from the Flask app.</span>
+
+<span class="sd">    There is probably a better way to do this.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">ListingService</span><span class="p">,</span> <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;listing_service&#39;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="year_month"><a class="viewcode-back" href="../../../api/browse.controllers.list_page.html#browse.controllers.list_page.year_month">[docs]</a><span class="k">def</span> <span class="nf">year_month</span><span class="p">(</span><span class="n">tp</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
+    <span class="sd">&quot;&quot;&quot;Gets the year and month from the time_period parameter.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tp</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">6</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># 2dig year</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">tp</span><span class="p">),</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>  <span class="c1"># 2 dig year, 2 dig month</span>
+        <span class="n">mm_part</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tp</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+
+        <span class="n">yy_part</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tp</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">yy_part</span> <span class="o">&gt;=</span> <span class="mi">91</span> <span class="ow">and</span> <span class="n">yy_part</span> <span class="o">&lt;=</span> <span class="mi">99</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">1900</span> <span class="o">+</span> <span class="n">yy_part</span><span class="p">,</span> <span class="n">mm_part</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">2000</span> <span class="o">+</span> <span class="n">yy_part</span><span class="p">,</span> <span class="n">mm_part</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span>  <span class="c1"># wow, 4 digit year!</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">tp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">tp</span><span class="p">[</span><span class="mi">4</span><span class="p">:])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="more_fewer"><a class="viewcode-back" href="../../../api/browse.controllers.list_page.html#browse.controllers.list_page.more_fewer">[docs]</a><span class="k">def</span> <span class="nf">more_fewer</span><span class="p">(</span><span class="n">show</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">viewing_all</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Links for the more/fewer sections.</span>
+
+<span class="sd">    We want first show_values[n] where show_values[n] &lt; show and</span>
+<span class="sd">    show_values[n+1] &gt; show</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nplus1s</span> <span class="o">=</span> <span class="n">show_values</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">n_n1_tups</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">,</span> <span class="n">n1</span><span class="p">:</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n1</span><span class="p">),</span> <span class="n">show_values</span><span class="p">,</span> <span class="n">nplus1s</span><span class="p">)</span>
+    <span class="n">tup_f</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">nt</span><span class="p">:</span> <span class="n">nt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">show</span> <span class="ow">and</span> <span class="n">nt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">show</span><span class="p">,</span> <span class="n">n_n1_tups</span><span class="p">)</span>
+    <span class="n">rd</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;mf_fewer&#39;</span><span class="p">:</span> <span class="nb">next</span><span class="p">(</span><span class="n">tup_f</span><span class="p">,</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">))[</span><span class="mi">0</span><span class="p">]}</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">viewing_all</span> <span class="ow">and</span> <span class="n">count</span> <span class="o">&lt;</span> <span class="n">max_show</span> <span class="ow">and</span> <span class="n">show</span> <span class="o">&lt;</span> <span class="n">max_show</span><span class="p">:</span>
+        <span class="n">rd</span><span class="p">[</span><span class="s1">&#39;mf_all&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span>
+
+    <span class="c1"># python lacks a find(labmda x:...) ?</span>
+    <span class="n">rd</span><span class="p">[</span><span class="s1">&#39;mf_more&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+        <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">show</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">,</span> <span class="n">show_values</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+
+    <span class="k">return</span> <span class="n">rd</span></div>
+
+
+<div class="viewcode-block" id="dl_for_articles"><a class="viewcode-back" href="../../../api/browse.controllers.list_page.html#browse.controllers.list_page.dl_for_articles">[docs]</a><span class="k">def</span> <span class="nf">dl_for_articles</span><span class="p">(</span><span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span><span class="o">-&gt;</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Gets the download links for an article.&quot;&quot;&quot;</span>
+    <span class="n">dl_pref</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;xxx-ps-defaults&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">arxiv_id_v</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get_dissemination_formats</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;article&#39;</span><span class="p">],</span> <span class="n">dl_pref</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="authors_for_articles"><a class="viewcode-back" href="../../../api/browse.controllers.list_page.html#browse.controllers.list_page.authors_for_articles">[docs]</a><span class="k">def</span> <span class="nf">authors_for_articles</span><span class="p">(</span><span class="n">listings</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span><span class="o">-&gt;</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Returns a Dict of article id to author links.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">arxiv_id_v</span><span class="p">:</span> <span class="n">author_links</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;article&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">listings</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="author_links"><a class="viewcode-back" href="../../../api/browse.controllers.list_page.html#browse.controllers.list_page.author_links">[docs]</a><span class="k">def</span> <span class="nf">author_links</span><span class="p">(</span><span class="n">abs_meta</span><span class="p">:</span> <span class="n">DocMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AuthorList</span><span class="p">,</span> <span class="n">AuthorList</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Creates author list links in a very similar way to abs page.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">split_long_author_list</span><span class="p">(</span><span class="n">queries_for_authors</span><span class="p">(</span><span class="n">abs_meta</span><span class="o">.</span><span class="n">authors</span><span class="o">.</span><span class="n">raw</span><span class="p">),</span>
+                                  <span class="n">truncate_author_list_size</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="index_for_types"><a class="viewcode-back" href="../../../api/browse.controllers.list_page.html#browse.controllers.list_page.index_for_types">[docs]</a><span class="k">def</span> <span class="nf">index_for_types</span><span class="p">(</span><span class="n">resp</span><span class="p">:</span> <span class="n">NewResponse</span><span class="p">,</span>
+                    <span class="n">context</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subcontext</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                    <span class="n">skipn</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">shown</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Creates index for types of new papers in a NewResponse.&quot;&quot;&quot;</span>
+    <span class="n">ift</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">new_count</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;new_count&#39;</span><span class="p">]</span>
+    <span class="n">cross_count</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;cross_count&#39;</span><span class="p">]</span>
+    <span class="n">rep_count</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;rep_count&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">new_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">skipn</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ift</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;New submissions&#39;</span><span class="p">,</span>
+                        <span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;.list_articles&#39;</span><span class="p">,</span>
+                                <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span> <span class="n">subcontext</span><span class="o">=</span><span class="n">subcontext</span><span class="p">,</span>
+                                <span class="n">skip</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="n">shown</span><span class="p">),</span>
+                        <span class="mi">0</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ift</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;New submissions&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">cross_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">cross_index</span> <span class="o">=</span> <span class="n">new_count</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">c_skip</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">new_count</span> <span class="o">/</span> <span class="n">shown</span><span class="p">)</span> <span class="o">*</span> <span class="n">shown</span>
+
+        <span class="k">if</span> <span class="n">new_count</span> <span class="o">&gt;</span> <span class="n">shown</span><span class="p">:</span>
+            <span class="n">ift</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;Cross-lists&#39;</span><span class="p">,</span>
+                        <span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;.list_articles&#39;</span><span class="p">,</span>
+                                <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span> <span class="n">subcontext</span><span class="o">=</span><span class="n">subcontext</span><span class="p">,</span>
+                                <span class="n">skip</span><span class="o">=</span><span class="n">c_skip</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="n">shown</span><span class="p">),</span>
+                        <span class="n">cross_index</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ift</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;Cross-lists&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">cross_index</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">rep_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">rep_index</span> <span class="o">=</span> <span class="n">new_count</span><span class="o">+</span><span class="n">cross_count</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">rep_skip</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">new_count</span> <span class="o">+</span> <span class="n">cross_count</span><span class="p">)</span><span class="o">/</span><span class="n">shown</span><span class="p">)</span> <span class="o">*</span> <span class="n">shown</span>
+        <span class="k">if</span> <span class="n">new_count</span> <span class="o">+</span> <span class="n">cross_count</span> <span class="o">&gt;</span> <span class="n">shown</span><span class="p">:</span>
+            <span class="n">ift</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;Replacements&#39;</span><span class="p">,</span>
+                        <span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;.list_articles&#39;</span><span class="p">,</span>
+                                <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span> <span class="n">subcontext</span><span class="o">=</span><span class="n">subcontext</span><span class="p">,</span>
+                                <span class="n">skip</span><span class="o">=</span><span class="n">rep_skip</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="n">shown</span><span class="p">),</span>
+                        <span class="n">rep_index</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ift</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;Replacements&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">rep_index</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;index_for_types&#39;</span><span class="p">:</span> <span class="n">ift</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="sub_sections_for_types"><a class="viewcode-back" href="../../../api/browse.controllers.list_page.html#browse.controllers.list_page.sub_sections_for_types">[docs]</a><span class="k">def</span> <span class="nf">sub_sections_for_types</span><span class="p">(</span>
+        <span class="n">resp</span><span class="p">:</span> <span class="n">NewResponse</span><span class="p">,</span>
+        <span class="n">skipn</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">shown</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Creates data used in section headings on /list/ARCHIVE/new.&quot;&quot;&quot;</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">new_count</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;new_count&#39;</span><span class="p">]</span>
+    <span class="n">cross_count</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;cross_count&#39;</span><span class="p">]</span>
+    <span class="n">rep_count</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;rep_count&#39;</span><span class="p">]</span>
+
+    <span class="n">news</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;listings&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;listingType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;new&#39;</span><span class="p">]</span>
+    <span class="n">crosses</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;listings&#39;</span><span class="p">]</span>
+               <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;listingType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;cross&#39;</span><span class="p">]</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;listings&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;listingType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;rep&#39;</span><span class="p">]</span>
+
+    <span class="n">cross_start</span> <span class="o">=</span> <span class="n">new_count</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">rep_start</span> <span class="o">=</span> <span class="n">new_count</span> <span class="o">+</span> <span class="n">cross_count</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">last_shown</span> <span class="o">=</span> <span class="n">skipn</span> <span class="o">+</span> <span class="n">shown</span>
+
+    <span class="k">if</span> <span class="n">news</span><span class="p">:</span>
+        <span class="n">secs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;new&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;items&#39;</span><span class="p">:</span> <span class="n">news</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">new_count</span><span class="p">,</span>
+            <span class="s1">&#39;continued&#39;</span><span class="p">:</span> <span class="n">skipn</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;last&#39;</span><span class="p">:</span> <span class="n">skipn</span> <span class="o">&gt;=</span> <span class="n">new_count</span> <span class="o">-</span> <span class="n">shown</span>
+        <span class="p">})</span>
+    <span class="c1"># else already skipped past new section</span>
+
+    <span class="k">if</span> <span class="n">crosses</span><span class="p">:</span>
+        <span class="n">secs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;cross&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;items&#39;</span><span class="p">:</span> <span class="n">crosses</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">cross_count</span><span class="p">,</span>
+            <span class="s1">&#39;continued&#39;</span><span class="p">:</span> <span class="n">skipn</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="n">cross_start</span><span class="p">,</span>
+            <span class="s1">&#39;last&#39;</span><span class="p">:</span> <span class="n">skipn</span> <span class="o">&gt;=</span> <span class="n">rep_start</span> <span class="o">-</span> <span class="n">shown</span>
+        <span class="p">})</span>
+    <span class="c1"># else skipped past cross section</span>
+
+    <span class="k">if</span> <span class="n">reps</span><span class="p">:</span>
+        <span class="n">secs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;rep&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;items&#39;</span><span class="p">:</span> <span class="n">reps</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">rep_count</span><span class="p">,</span>
+            <span class="s1">&#39;continued&#39;</span><span class="p">:</span> <span class="n">skipn</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="n">rep_start</span><span class="p">,</span>
+            <span class="s1">&#39;last&#39;</span><span class="p">:</span> <span class="n">last_shown</span> <span class="o">&gt;=</span> <span class="n">new_count</span> <span class="o">+</span> <span class="n">cross_count</span> <span class="o">+</span> <span class="n">rep_count</span>
+        <span class="p">})</span>
+
+    <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">secs</span><span class="p">:</span>
+        <span class="n">typ</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;new&#39;</span><span class="p">:</span> <span class="s1">&#39;New&#39;</span><span class="p">,</span> <span class="s1">&#39;cross&#39;</span><span class="p">:</span> <span class="s1">&#39;Cross&#39;</span><span class="p">,</span> <span class="s1">&#39;rep&#39;</span><span class="p">:</span> <span class="s1">&#39;Replacement&#39;</span><span class="p">}[</span>  <span class="c1"># type: ignore</span>
+            <span class="n">sec</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]]</span>
+        <span class="n">date</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;announced&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%A, </span><span class="si">%-d</span><span class="s1"> %B %Y&#39;</span><span class="p">)</span>
+
+        <span class="n">showing</span> <span class="o">=</span> <span class="s1">&#39;showing &#39;</span>
+        <span class="k">if</span> <span class="n">sec</span><span class="p">[</span><span class="s1">&#39;continued&#39;</span><span class="p">]:</span>
+            <span class="n">showing</span> <span class="o">=</span> <span class="s1">&#39;continued, &#39;</span> <span class="o">+</span> <span class="n">showing</span>
+            <span class="k">if</span> <span class="n">sec</span><span class="p">[</span><span class="s1">&#39;last&#39;</span><span class="p">]:</span>
+                <span class="n">showing</span> <span class="o">=</span> <span class="n">showing</span> <span class="o">+</span> <span class="s1">&#39;last &#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sec</span><span class="p">[</span><span class="s1">&#39;last&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">sec</span><span class="p">[</span><span class="s1">&#39;continued&#39;</span><span class="p">]:</span>
+            <span class="n">showing</span> <span class="o">=</span> <span class="n">showing</span> <span class="o">+</span> <span class="s1">&#39;first &#39;</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sec</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
+        <span class="n">tot</span> <span class="o">=</span> <span class="n">sec</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span>
+        <span class="n">sec</span><span class="p">[</span><span class="s1">&#39;heading&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{typ}</span><span class="s1"> submissions for </span><span class="si">{date}</span><span class="s1"> (</span><span class="si">{showing}{n}</span><span class="s1"> of </span><span class="si">{tot}</span><span class="s1"> entries )&#39;</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;sub_sections_for_types&#39;</span><span class="p">:</span> <span class="n">secs</span><span class="p">}</span></div>
+
+
+<span class="k">def</span> <span class="nf">_not_modified</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ListingResponse</span><span class="p">,</span> <span class="n">NewResponse</span><span class="p">,</span> <span class="n">NotModifiedResponse</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">response</span> <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;not_modified&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_expires_headers</span><span class="p">(</span><span class="n">listing_resp</span><span class="p">:</span>
+                     <span class="n">Union</span><span class="p">[</span><span class="n">ListingResponse</span><span class="p">,</span> <span class="n">NewResponse</span><span class="p">,</span> <span class="n">NotModifiedResponse</span><span class="p">])</span> \
+                     <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">listing_resp</span> <span class="ow">and</span> <span class="n">listing_resp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;expires&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Expires&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">listing_resp</span><span class="p">[</span><span class="s1">&#39;expires&#39;</span><span class="p">])}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,996 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.services.database.models module &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-browse.services.database.models">
+<span id="browse-services-database-models-module"></span><h1>browse.services.database.models module<a class="headerlink" href="#module-browse.services.database.models" title="Permalink to this headline">¶</a></h1>
+<p>arXiv browse database models.</p>
+<dl class="class">
+<dt id="browse.services.database.models.Archive">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">Archive</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#Archive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.Archive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for archive in taxonomy.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.Archive.arXiv_group">
+<code class="descname">arXiv_group</code><a class="headerlink" href="#browse.services.database.models.Archive.arXiv_group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Archive.archive_id">
+<code class="descname">archive_id</code><a class="headerlink" href="#browse.services.database.models.Archive.archive_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Archive.archive_name">
+<code class="descname">archive_name</code><a class="headerlink" href="#browse.services.database.models.Archive.archive_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Archive.end_date">
+<code class="descname">end_date</code><a class="headerlink" href="#browse.services.database.models.Archive.end_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Archive.in_group">
+<code class="descname">in_group</code><a class="headerlink" href="#browse.services.database.models.Archive.in_group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Archive.start_date">
+<code class="descname">start_date</code><a class="headerlink" href="#browse.services.database.models.Archive.start_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Archive.subdivided">
+<code class="descname">subdivided</code><a class="headerlink" href="#browse.services.database.models.Archive.subdivided" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.Category">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">Category</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#Category"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.Category" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for category in taxonomy.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.active">
+<code class="descname">active</code><a class="headerlink" href="#browse.services.database.models.Category.active" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.arXiv_archive">
+<code class="descname">arXiv_archive</code><a class="headerlink" href="#browse.services.database.models.Category.arXiv_archive" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.arXiv_endorsement_domain">
+<code class="descname">arXiv_endorsement_domain</code><a class="headerlink" href="#browse.services.database.models.Category.arXiv_endorsement_domain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.archive">
+<code class="descname">archive</code><a class="headerlink" href="#browse.services.database.models.Category.archive" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.category_name">
+<code class="descname">category_name</code><a class="headerlink" href="#browse.services.database.models.Category.category_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.definitive">
+<code class="descname">definitive</code><a class="headerlink" href="#browse.services.database.models.Category.definitive" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.endorse_all">
+<code class="descname">endorse_all</code><a class="headerlink" href="#browse.services.database.models.Category.endorse_all" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.endorse_email">
+<code class="descname">endorse_email</code><a class="headerlink" href="#browse.services.database.models.Category.endorse_email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.endorsement_domain">
+<code class="descname">endorsement_domain</code><a class="headerlink" href="#browse.services.database.models.Category.endorsement_domain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.papers_to_endorse">
+<code class="descname">papers_to_endorse</code><a class="headerlink" href="#browse.services.database.models.Category.papers_to_endorse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Category.subject_class">
+<code class="descname">subject_class</code><a class="headerlink" href="#browse.services.database.models.Category.subject_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.DBLP">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">DBLP</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#DBLP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.DBLP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Primary model for the DBLP Computer Science Bibliography data.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.DBLP.document_id">
+<code class="descname">document_id</code><a class="headerlink" href="#browse.services.database.models.DBLP.document_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.DBLP.url">
+<code class="descname">url</code><a class="headerlink" href="#browse.services.database.models.DBLP.url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.DBLPAuthor">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">DBLPAuthor</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#DBLPAuthor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.DBLPAuthor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for DBLP author name.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.DBLPAuthor.author_id">
+<code class="descname">author_id</code><a class="headerlink" href="#browse.services.database.models.DBLPAuthor.author_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.DBLPAuthor.name">
+<code class="descname">name</code><a class="headerlink" href="#browse.services.database.models.DBLPAuthor.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.DBLPDocumentAuthor">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">DBLPDocumentAuthor</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#DBLPDocumentAuthor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.DBLPDocumentAuthor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for the DBLP document to author mapping with ordering.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.DBLPDocumentAuthor.author">
+<code class="descname">author</code><a class="headerlink" href="#browse.services.database.models.DBLPDocumentAuthor.author" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.DBLPDocumentAuthor.author_id">
+<code class="descname">author_id</code><a class="headerlink" href="#browse.services.database.models.DBLPDocumentAuthor.author_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.DBLPDocumentAuthor.document">
+<code class="descname">document</code><a class="headerlink" href="#browse.services.database.models.DBLPDocumentAuthor.document" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.DBLPDocumentAuthor.document_id">
+<code class="descname">document_id</code><a class="headerlink" href="#browse.services.database.models.DBLPDocumentAuthor.document_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.DBLPDocumentAuthor.position">
+<code class="descname">position</code><a class="headerlink" href="#browse.services.database.models.DBLPDocumentAuthor.position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.Document">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">Document</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#Document"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.Document" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for documents stored as part of the arXiv repository.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.authors">
+<code class="descname">authors</code><a class="headerlink" href="#browse.services.database.models.Document.authors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.created">
+<code class="descname">created</code><a class="headerlink" href="#browse.services.database.models.Document.created" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.dated">
+<code class="descname">dated</code><a class="headerlink" href="#browse.services.database.models.Document.dated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.document_id">
+<code class="descname">document_id</code><a class="headerlink" href="#browse.services.database.models.Document.document_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.paper_id">
+<code class="descname">paper_id</code><a class="headerlink" href="#browse.services.database.models.Document.paper_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.primary_subject_class">
+<code class="descname">primary_subject_class</code><a class="headerlink" href="#browse.services.database.models.Document.primary_subject_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.submitter">
+<code class="descname">submitter</code><a class="headerlink" href="#browse.services.database.models.Document.submitter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.submitter_email">
+<code class="descname">submitter_email</code><a class="headerlink" href="#browse.services.database.models.Document.submitter_email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.submitter_id">
+<code class="descname">submitter_id</code><a class="headerlink" href="#browse.services.database.models.Document.submitter_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Document.title">
+<code class="descname">title</code><a class="headerlink" href="#browse.services.database.models.Document.title" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.EndorsementDomain">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">EndorsementDomain</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#EndorsementDomain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.EndorsementDomain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for endorsement domain.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.EndorsementDomain.endorse_all">
+<code class="descname">endorse_all</code><a class="headerlink" href="#browse.services.database.models.EndorsementDomain.endorse_all" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.EndorsementDomain.endorse_email">
+<code class="descname">endorse_email</code><a class="headerlink" href="#browse.services.database.models.EndorsementDomain.endorse_email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.EndorsementDomain.endorsement_domain">
+<code class="descname">endorsement_domain</code><a class="headerlink" href="#browse.services.database.models.EndorsementDomain.endorsement_domain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.EndorsementDomain.mods_endorse_all">
+<code class="descname">mods_endorse_all</code><a class="headerlink" href="#browse.services.database.models.EndorsementDomain.mods_endorse_all" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.EndorsementDomain.papers_to_endorse">
+<code class="descname">papers_to_endorse</code><a class="headerlink" href="#browse.services.database.models.EndorsementDomain.papers_to_endorse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.Group">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">Group</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#Group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.Group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for group in taxonomy.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.Group.group_id">
+<code class="descname">group_id</code><a class="headerlink" href="#browse.services.database.models.Group.group_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Group.group_name">
+<code class="descname">group_name</code><a class="headerlink" href="#browse.services.database.models.Group.group_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Group.start_year">
+<code class="descname">start_year</code><a class="headerlink" href="#browse.services.database.models.Group.start_year" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.License">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">License</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#License"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.License" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for arXiv licenses.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.License.active">
+<code class="descname">active</code><a class="headerlink" href="#browse.services.database.models.License.active" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.License.label">
+<code class="descname">label</code><a class="headerlink" href="#browse.services.database.models.License.label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.License.name">
+<code class="descname">name</code><a class="headerlink" href="#browse.services.database.models.License.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.License.note">
+<code class="descname">note</code><a class="headerlink" href="#browse.services.database.models.License.note" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.License.sequence">
+<code class="descname">sequence</code><a class="headerlink" href="#browse.services.database.models.License.sequence" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.MemberInstitution">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">MemberInstitution</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#MemberInstitution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.MemberInstitution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Primary model for arXiv member insitution data.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitution.alt_text">
+<code class="descname">alt_text</code><a class="headerlink" href="#browse.services.database.models.MemberInstitution.alt_text" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitution.id">
+<code class="descname">id</code><a class="headerlink" href="#browse.services.database.models.MemberInstitution.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitution.label">
+<code class="descname">label</code><a class="headerlink" href="#browse.services.database.models.MemberInstitution.label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitution.link_icon">
+<code class="descname">link_icon</code><a class="headerlink" href="#browse.services.database.models.MemberInstitution.link_icon" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitution.name">
+<code class="descname">name</code><a class="headerlink" href="#browse.services.database.models.MemberInstitution.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitution.note">
+<code class="descname">note</code><a class="headerlink" href="#browse.services.database.models.MemberInstitution.note" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitution.resolver_URL">
+<code class="descname">resolver_URL</code><a class="headerlink" href="#browse.services.database.models.MemberInstitution.resolver_URL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.MemberInstitutionContact">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">MemberInstitutionContact</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#MemberInstitutionContact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.MemberInstitutionContact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for arXiv member institution contact information.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionContact.Subscription_UniversalInstitution">
+<code class="descname">Subscription_UniversalInstitution</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionContact.Subscription_UniversalInstitution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionContact.active">
+<code class="descname">active</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionContact.active" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionContact.contact_name">
+<code class="descname">contact_name</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionContact.contact_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionContact.email">
+<code class="descname">email</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionContact.email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionContact.id">
+<code class="descname">id</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionContact.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionContact.note">
+<code class="descname">note</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionContact.note" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionContact.phone">
+<code class="descname">phone</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionContact.phone" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionContact.sid">
+<code class="descname">sid</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionContact.sid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.MemberInstitutionIP">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">MemberInstitutionIP</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#MemberInstitutionIP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.MemberInstitutionIP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for arXiv member insitution IP address ranges and exclusions.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionIP.Subscription_UniversalInstitution">
+<code class="descname">Subscription_UniversalInstitution</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionIP.Subscription_UniversalInstitution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionIP.end">
+<code class="descname">end</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionIP.end" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionIP.exclude">
+<code class="descname">exclude</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionIP.exclude" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionIP.id">
+<code class="descname">id</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionIP.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionIP.sid">
+<code class="descname">sid</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionIP.sid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.MemberInstitutionIP.start">
+<code class="descname">start</code><a class="headerlink" href="#browse.services.database.models.MemberInstitutionIP.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.Metadata">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">Metadata</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#Metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.Metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for arXiv document metadata.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.abs_categories">
+<code class="descname">abs_categories</code><a class="headerlink" href="#browse.services.database.models.Metadata.abs_categories" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.abstract">
+<code class="descname">abstract</code><a class="headerlink" href="#browse.services.database.models.Metadata.abstract" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.acm_class">
+<code class="descname">acm_class</code><a class="headerlink" href="#browse.services.database.models.Metadata.acm_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.arXiv_license">
+<code class="descname">arXiv_license</code><a class="headerlink" href="#browse.services.database.models.Metadata.arXiv_license" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.authors">
+<code class="descname">authors</code><a class="headerlink" href="#browse.services.database.models.Metadata.authors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.comments">
+<code class="descname">comments</code><a class="headerlink" href="#browse.services.database.models.Metadata.comments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.created">
+<code class="descname">created</code><a class="headerlink" href="#browse.services.database.models.Metadata.created" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.document">
+<code class="descname">document</code><a class="headerlink" href="#browse.services.database.models.Metadata.document" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.document_id">
+<code class="descname">document_id</code><a class="headerlink" href="#browse.services.database.models.Metadata.document_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.doi">
+<code class="descname">doi</code><a class="headerlink" href="#browse.services.database.models.Metadata.doi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.is_current">
+<code class="descname">is_current</code><a class="headerlink" href="#browse.services.database.models.Metadata.is_current" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.is_withdrawn">
+<code class="descname">is_withdrawn</code><a class="headerlink" href="#browse.services.database.models.Metadata.is_withdrawn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.journal_ref">
+<code class="descname">journal_ref</code><a class="headerlink" href="#browse.services.database.models.Metadata.journal_ref" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.license">
+<code class="descname">license</code><a class="headerlink" href="#browse.services.database.models.Metadata.license" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.metadata_id">
+<code class="descname">metadata_id</code><a class="headerlink" href="#browse.services.database.models.Metadata.metadata_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.modtime">
+<code class="descname">modtime</code><a class="headerlink" href="#browse.services.database.models.Metadata.modtime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.msc_class">
+<code class="descname">msc_class</code><a class="headerlink" href="#browse.services.database.models.Metadata.msc_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.paper_id">
+<code class="descname">paper_id</code><a class="headerlink" href="#browse.services.database.models.Metadata.paper_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.proxy">
+<code class="descname">proxy</code><a class="headerlink" href="#browse.services.database.models.Metadata.proxy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.report_num">
+<code class="descname">report_num</code><a class="headerlink" href="#browse.services.database.models.Metadata.report_num" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.source_flags">
+<code class="descname">source_flags</code><a class="headerlink" href="#browse.services.database.models.Metadata.source_flags" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.source_format">
+<code class="descname">source_format</code><a class="headerlink" href="#browse.services.database.models.Metadata.source_format" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.source_size">
+<code class="descname">source_size</code><a class="headerlink" href="#browse.services.database.models.Metadata.source_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.submitter">
+<code class="descname">submitter</code><a class="headerlink" href="#browse.services.database.models.Metadata.submitter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.submitter_email">
+<code class="descname">submitter_email</code><a class="headerlink" href="#browse.services.database.models.Metadata.submitter_email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.submitter_id">
+<code class="descname">submitter_id</code><a class="headerlink" href="#browse.services.database.models.Metadata.submitter_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.submitter_name">
+<code class="descname">submitter_name</code><a class="headerlink" href="#browse.services.database.models.Metadata.submitter_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.title">
+<code class="descname">title</code><a class="headerlink" href="#browse.services.database.models.Metadata.title" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.updated">
+<code class="descname">updated</code><a class="headerlink" href="#browse.services.database.models.Metadata.updated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.Metadata.version">
+<code class="descname">version</code><a class="headerlink" href="#browse.services.database.models.Metadata.version" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.SciencewisePing">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">SciencewisePing</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#SciencewisePing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.SciencewisePing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for ScienceWISE (trackback) pings.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.SciencewisePing.paper_id_v">
+<code class="descname">paper_id_v</code><a class="headerlink" href="#browse.services.database.models.SciencewisePing.paper_id_v" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.SciencewisePing.updated">
+<code class="descname">updated</code><a class="headerlink" href="#browse.services.database.models.SciencewisePing.updated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.TrackbackPing">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">TrackbackPing</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#TrackbackPing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.TrackbackPing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Primary model for arXiv trackback data.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.approved_by_user">
+<code class="descname">approved_by_user</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.approved_by_user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.approved_time">
+<code class="descname">approved_time</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.approved_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.blog_name">
+<code class="descname">blog_name</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.blog_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.document_id">
+<code class="descname">document_id</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.document_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.excerpt">
+<code class="descname">excerpt</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.excerpt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.is_stale">
+<code class="descname">is_stale</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.is_stale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.posted_date">
+<code class="descname">posted_date</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.posted_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.remote_addr">
+<code class="descname">remote_addr</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.remote_addr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.remote_host">
+<code class="descname">remote_host</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.remote_host" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.site_id">
+<code class="descname">site_id</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.site_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.status">
+<code class="descname">status</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.title">
+<code class="descname">title</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.title" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.trackback_id">
+<code class="descname">trackback_id</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.trackback_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackPing.url">
+<code class="descname">url</code><a class="headerlink" href="#browse.services.database.models.TrackbackPing.url" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.TrackbackSite">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">TrackbackSite</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#TrackbackSite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.TrackbackSite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for sites that submit trackbacks to arXiv.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackSite.action">
+<code class="descname">action</code><a class="headerlink" href="#browse.services.database.models.TrackbackSite.action" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackSite.pattern">
+<code class="descname">pattern</code><a class="headerlink" href="#browse.services.database.models.TrackbackSite.pattern" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.TrackbackSite.site_id">
+<code class="descname">site_id</code><a class="headerlink" href="#browse.services.database.models.TrackbackSite.site_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.User">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">User</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#User"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.User" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for legacy user data.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.User.email">
+<code class="descname">email</code><a class="headerlink" href="#browse.services.database.models.User.email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.email_bouncing">
+<code class="descname">email_bouncing</code><a class="headerlink" href="#browse.services.database.models.User.email_bouncing" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.first_name">
+<code class="descname">first_name</code><a class="headerlink" href="#browse.services.database.models.User.first_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_allow_tex_produced">
+<code class="descname">flag_allow_tex_produced</code><a class="headerlink" href="#browse.services.database.models.User.flag_allow_tex_produced" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_approved">
+<code class="descname">flag_approved</code><a class="headerlink" href="#browse.services.database.models.User.flag_approved" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_banned">
+<code class="descname">flag_banned</code><a class="headerlink" href="#browse.services.database.models.User.flag_banned" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_deleted">
+<code class="descname">flag_deleted</code><a class="headerlink" href="#browse.services.database.models.User.flag_deleted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_edit_system">
+<code class="descname">flag_edit_system</code><a class="headerlink" href="#browse.services.database.models.User.flag_edit_system" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_edit_users">
+<code class="descname">flag_edit_users</code><a class="headerlink" href="#browse.services.database.models.User.flag_edit_users" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_email_verified">
+<code class="descname">flag_email_verified</code><a class="headerlink" href="#browse.services.database.models.User.flag_email_verified" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_html_email">
+<code class="descname">flag_html_email</code><a class="headerlink" href="#browse.services.database.models.User.flag_html_email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_internal">
+<code class="descname">flag_internal</code><a class="headerlink" href="#browse.services.database.models.User.flag_internal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.flag_wants_email">
+<code class="descname">flag_wants_email</code><a class="headerlink" href="#browse.services.database.models.User.flag_wants_email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.joined_date">
+<code class="descname">joined_date</code><a class="headerlink" href="#browse.services.database.models.User.joined_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.joined_ip_num">
+<code class="descname">joined_ip_num</code><a class="headerlink" href="#browse.services.database.models.User.joined_ip_num" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.joined_remote_host">
+<code class="descname">joined_remote_host</code><a class="headerlink" href="#browse.services.database.models.User.joined_remote_host" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.last_name">
+<code class="descname">last_name</code><a class="headerlink" href="#browse.services.database.models.User.last_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.policy_class">
+<code class="descname">policy_class</code><a class="headerlink" href="#browse.services.database.models.User.policy_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.share_email">
+<code class="descname">share_email</code><a class="headerlink" href="#browse.services.database.models.User.share_email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.share_first_name">
+<code class="descname">share_first_name</code><a class="headerlink" href="#browse.services.database.models.User.share_first_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.share_last_name">
+<code class="descname">share_last_name</code><a class="headerlink" href="#browse.services.database.models.User.share_last_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.suffix_name">
+<code class="descname">suffix_name</code><a class="headerlink" href="#browse.services.database.models.User.suffix_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.tapir_policy_class">
+<code class="descname">tapir_policy_class</code><a class="headerlink" href="#browse.services.database.models.User.tapir_policy_class" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.tracking_cookie">
+<code class="descname">tracking_cookie</code><a class="headerlink" href="#browse.services.database.models.User.tracking_cookie" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.User.user_id">
+<code class="descname">user_id</code><a class="headerlink" href="#browse.services.database.models.User.user_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.database.models.UserPolicyClass">
+<em class="property">class </em><code class="descclassname">browse.services.database.models.</code><code class="descname">UserPolicyClass</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/database/models.html#UserPolicyClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.UserPolicyClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">sqlalchemy.ext.declarative.api.Model</span></code></p>
+<p>Model for the legacy user policy class.</p>
+<dl class="attribute">
+<dt id="browse.services.database.models.UserPolicyClass.class_id">
+<code class="descname">class_id</code><a class="headerlink" href="#browse.services.database.models.UserPolicyClass.class_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.UserPolicyClass.description">
+<code class="descname">description</code><a class="headerlink" href="#browse.services.database.models.UserPolicyClass.description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.UserPolicyClass.name">
+<code class="descname">name</code><a class="headerlink" href="#browse.services.database.models.UserPolicyClass.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.UserPolicyClass.password_storage">
+<code class="descname">password_storage</code><a class="headerlink" href="#browse.services.database.models.UserPolicyClass.password_storage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.UserPolicyClass.permanent_login">
+<code class="descname">permanent_login</code><a class="headerlink" href="#browse.services.database.models.UserPolicyClass.permanent_login" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="browse.services.database.models.UserPolicyClass.recovery_policy">
+<code class="descname">recovery_policy</code><a class="headerlink" href="#browse.services.database.models.UserPolicyClass.recovery_policy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.database.models.init_app">
+<code class="descclassname">browse.services.database.models.</code><code class="descname">init_app</code><span class="sig-paren">(</span><em>app: Optional[werkzeug.local.LocalProxy]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/browse/services/database/models.html#init_app"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.database.models.init_app" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set configuration defaults and attach session to the application.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/browse.services.database.models.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

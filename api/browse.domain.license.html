@@ -1,0 +1,170 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.domain.license module &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-browse.domain.license">
+<span id="browse-domain-license-module"></span><h1>browse.domain.license module<a class="headerlink" href="#module-browse.domain.license" title="Permalink to this headline">¶</a></h1>
+<p>Representations of the license on a document metadata.</p>
+<dl class="class">
+<dt id="browse.domain.license.License">
+<em class="property">class </em><code class="descclassname">browse.domain.license.</code><code class="descname">License</code><span class="sig-paren">(</span><em>recorded_uri: Optional[str] = None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/domain/license.html#License"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.license.License" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Represents an arXiv article license.</p>
+<dl class="attribute">
+<dt id="browse.domain.license.License.effective_uri">
+<code class="descname">effective_uri</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.license.License.effective_uri" title="Permalink to this definition">¶</a></dt>
+<dd><p>License that is in effect.</p>
+<p>When the submitter uploaded this paper to arXiv, they agreed to
+arXiv using the paper under the terms of this license. This takes
+into account assumed license.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.license.License.icon_uri_path">
+<code class="descname">icon_uri_path</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.license.License.icon_uri_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to license icon.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.license.License.label">
+<code class="descname">label</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.license.License.label" title="Permalink to this definition">¶</a></dt>
+<dd><p>The license label.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.license.License.recorded_uri">
+<code class="descname">recorded_uri</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.license.License.recorded_uri" title="Permalink to this definition">¶</a></dt>
+<dd><p>URI of a license if one is in the article record.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.domain.license.license_for_recorded_license">
+<code class="descclassname">browse.domain.license.</code><code class="descname">license_for_recorded_license</code><span class="sig-paren">(</span><em>recorded_uri: Optional[str]</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="../_modules/browse/domain/license.html#license_for_recorded_license"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.license.license_for_recorded_license" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the license for the value recorded in the abs file.</p>
+<p>This represents an important encoding of policy in code:</p>
+<p>The submitters of articles between 1991 and 2003 aggreed to the
+assumed license. These have no license in the abs files becasue
+the authors could only submit papers if they accepted this
+license.</p>
+<p>After the submission system in Perl and catalyst was put into
+production 2009, the author selected from several licenses. If the
+author selected the arXiv assumed license, the abs file would have
+no license field. If the author selected a license other than the
+assumed license, it would be recorded in the .abs file in the
+field license. If the author did not select a license or sent an
+unexpected request they were shown the license page with an error
+message that they needed to select a license. It was designed to
+make it impossible for a submittion to be accepted without a
+license.  Submissions via the SWORD system required users to
+record a license for all their submissions as part of their user
+account data.</p>
+<p>A lack of a license in arXiv’s records did not mean the author
+failed to select a license. The classic submission system was
+explicitly written to not permit submitters to submit without
+selecting a license.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/browse.domain.license.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

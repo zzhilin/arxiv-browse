@@ -1,0 +1,154 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.services.document.cache module &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-browse.services.document.cache">
+<span id="browse-services-document-cache-module"></span><h1>browse.services.document.cache module<a class="headerlink" href="#module-browse.services.document.cache" title="Permalink to this headline">¶</a></h1>
+<p>Document cache service.</p>
+<dl class="exception">
+<dt id="browse.services.document.cache.DocumentCacheException">
+<em class="property">exception </em><code class="descclassname">browse.services.document.cache.</code><code class="descname">DocumentCacheException</code><a class="reference internal" href="../_modules/browse/services/document/cache.html#DocumentCacheException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.document.cache.DocumentCacheException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Error class for general arXiv document cache exceptions.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="browse.services.document.cache.DocumentCacheFormatException">
+<em class="property">exception </em><code class="descclassname">browse.services.document.cache.</code><code class="descname">DocumentCacheFormatException</code><a class="reference internal" href="../_modules/browse/services/document/cache.html#DocumentCacheFormatException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.document.cache.DocumentCacheFormatException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Error class for invalid document catch format exceptions.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.services.document.cache.DocumentCacheSession">
+<em class="property">class </em><code class="descclassname">browse.services.document.cache.</code><code class="descname">DocumentCacheSession</code><span class="sig-paren">(</span><em>document_cache_path: str</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/services/document/cache.html#DocumentCacheSession"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.document.cache.DocumentCacheSession" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Document cache session class.</p>
+<dl class="method">
+<dt id="browse.services.document.cache.DocumentCacheSession.get_cache_file_path">
+<code class="descname">get_cache_file_path</code><span class="sig-paren">(</span><em>docmeta: browse.domain.metadata.DocMetadata</em>, <em>cache_format: str</em><span class="sig-paren">)</span> &#x2192; Optional[str]<a class="reference internal" href="../_modules/browse/services/document/cache.html#DocumentCacheSession.get_cache_file_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.document.cache.DocumentCacheSession.get_cache_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the absolute path of the cache file/directory if it exists.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.document.cache.current_session">
+<code class="descclassname">browse.services.document.cache.</code><code class="descname">current_session</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; browse.services.document.cache.DocumentCacheSession<a class="reference internal" href="../_modules/browse/services/document/cache.html#current_session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.document.cache.current_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get/create <a class="reference internal" href="#browse.services.document.cache.DocumentCacheSession" title="browse.services.document.cache.DocumentCacheSession"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocumentCacheSession</span></code></a> for this context.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.document.cache.get_cache_file_path">
+<code class="descclassname">browse.services.document.cache.</code><code class="descname">get_cache_file_path</code><span class="sig-paren">(</span><em>self</em>, <em>docmeta: browse.domain.metadata.DocMetadata</em>, <em>cache_format: str</em><span class="sig-paren">)</span> &#x2192; Optional[str]<a class="reference internal" href="../_modules/browse/services/document/cache.html#get_cache_file_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.document.cache.get_cache_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the absolute path of the cache file/directory if it exists.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.document.cache.get_session">
+<code class="descclassname">browse.services.document.cache.</code><code class="descname">get_session</code><span class="sig-paren">(</span><em>app: object = None</em><span class="sig-paren">)</span> &#x2192; browse.services.document.cache.DocumentCacheSession<a class="reference internal" href="../_modules/browse/services/document/cache.html#get_session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.document.cache.get_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new session with the document cache service.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/browse.services.document.cache.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

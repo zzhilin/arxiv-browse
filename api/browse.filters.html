@@ -1,0 +1,178 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.filters module &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-browse.filters">
+<span id="browse-filters-module"></span><h1>browse.filters module<a class="headerlink" href="#module-browse.filters" title="Permalink to this headline">¶</a></h1>
+<p>Browse jinja filters.</p>
+<dl class="attribute">
+<dt id="browse.filters.JinjaFilterInput">
+<code class="descclassname">browse.filters.</code><code class="descname">JinjaFilterInput</code><a class="headerlink" href="#browse.filters.JinjaFilterInput" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">builtins.str</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.filters.entity_to_utf">
+<code class="descclassname">browse.filters.</code><code class="descname">entity_to_utf</code><span class="sig-paren">(</span><em>text: str</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="../_modules/browse/filters.html#entity_to_utf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.filters.entity_to_utf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert HTML entities to unicode.</p>
+<p>For example ‘&amp;amp;’ becomes ‘&amp;’.</p>
+<p>Must be first filter in list because it does not do anything to a
+Markup. On a Markup object it will do nothing and just return the
+input Markup.</p>
+<p>DANGEROUS because this is basically an unescape.
+It tries to avoid junk like &lt;script&gt; but it is a bad idea.
+This MUST NEVER BE USED ON USER PROVIDED INPUT. Submission titles etc.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.filters.line_feed_to_br">
+<code class="descclassname">browse.filters.</code><code class="descname">line_feed_to_br</code><span class="sig-paren">(</span><em>text: str</em><span class="sig-paren">)</span> &#x2192; markupsafe.Markup<a class="reference internal" href="../_modules/browse/filters.html#line_feed_to_br"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.filters.line_feed_to_br" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lines that start with two spaces should be broken.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.filters.single_doi_url">
+<code class="descclassname">browse.filters.</code><code class="descname">single_doi_url</code><span class="sig-paren">(</span><em>clickthrough_url_for: Callable[str, str], doi: str</em><span class="sig-paren">)</span> &#x2192; markupsafe.Markup<a class="reference internal" href="../_modules/browse/filters.html#single_doi_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.filters.single_doi_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>DOI is made into a link.</p>
+<p>This expects a DOI ONLY. It should not be used on general text.</p>
+<p>This link is not through clickthrough. Use an additional filter in
+the template to get that.</p>
+<p>How does this ensure escaping? It expects just a DOI, The result
+is created as a properly escaped Markup.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.filters.tex_to_utf">
+<code class="descclassname">browse.filters.</code><code class="descname">tex_to_utf</code><span class="sig-paren">(</span><em>text: str</em>, <em>letters: bool = True</em><span class="sig-paren">)</span> &#x2192; markupsafe.Markup<a class="reference internal" href="../_modules/browse/filters.html#tex_to_utf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.filters.tex_to_utf" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Convert some TeX accents and symbols to UTF-8 characters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">param text:</th><td class="field-body">Text to filter.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">param letters:</th><td class="field-body">If False, do not convert greek symbols.  Greek</td>
+</tr>
+</tbody>
+</table>
+<p>symbols can cause problems. Ex phi is not suppose to look like φ. 
+φ looks like</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>arphi to someone use to TeX.</dt>
+<dd><p class="first">See ARXIVNG-1612</p>
+<table class="last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">returns:</th><td class="field-body">Jinja Markup of filtered text</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/browse.filters.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

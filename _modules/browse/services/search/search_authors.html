@@ -1,0 +1,269 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.services.search.search_authors &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for browse.services.search.search_authors</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Produces search service query strings for authors.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">arxiv.util.tex2utf</span> <span class="k">import</span> <span class="n">tex2utf</span>
+<span class="kn">from</span> <span class="nn">arxiv.util.authors</span> <span class="k">import</span> <span class="n">split_authors</span><span class="p">,</span> <span class="n">PREFIX_MATCH</span>
+
+
+<span class="n">AuthorList</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span>
+<span class="sd">&quot;&quot;&quot;Type alias for list of authors or strings that is used to display</span>
+<span class="sd">the author list.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="is_affiliation"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.is_affiliation">[docs]</a><span class="k">def</span> <span class="nf">is_affiliation</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Return true if a string contains an affiliation.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;(&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_short"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.is_short">[docs]</a><span class="k">def</span> <span class="nf">is_short</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Return true if the length of string is less than 4 characters long.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span></div>
+
+
+<div class="viewcode-block" id="is_etal"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.is_etal">[docs]</a><span class="k">def</span> <span class="nf">is_etal</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Return true if the string contains et al.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;et\.? al\.?$&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="is_divider"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.is_divider">[docs]</a><span class="k">def</span> <span class="nf">is_divider</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Return true if the string contains a divider character.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^(,|:)&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="split_long_author_list"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.split_long_author_list">[docs]</a><span class="k">def</span> <span class="nf">split_long_author_list</span><span class="p">(</span>
+        <span class="n">authors</span><span class="p">:</span> <span class="n">AuthorList</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AuthorList</span><span class="p">,</span> <span class="n">AuthorList</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Returns two lists, first is of size, second is the remaining authors.</span>
+
+<span class="sd">    The author list has strings which are not part of the author</span>
+<span class="sd">    names, but commas between them to preserve the formatting that the</span>
+<span class="sd">    submitter used.</span>
+
+<span class="sd">    This function is used to split the list base on name count, not</span>
+<span class="sd">    just list element count.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">front</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">back</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">back_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">authors</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="n">size</span><span class="p">:</span>
+            <span class="n">back</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="n">back_count</span> <span class="o">=</span> <span class="n">back_count</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">front</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">front</span><span class="p">,</span> <span class="n">back</span><span class="p">,</span> <span class="n">back_count</span></div>
+
+
+<div class="viewcode-block" id="queries_for_authors"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.queries_for_authors">[docs]</a><span class="k">def</span> <span class="nf">queries_for_authors</span><span class="p">(</span><span class="n">authors</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthorList</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Make search service query strings for authors.</span>
+
+<span class="sd">    The main challenge here is that the HTML output of this should match as</span>
+<span class="sd">    closely as possible the string input by the submitter.</span>
+
+<span class="sd">    Takes the authors string from a document metadata or .abs, split,</span>
+<span class="sd">    and return a structure of [ str|(name_text, author_search_query_str)...]</span>
+
+<span class="sd">    If the item in the list is just a string, it should just be placed in the</span>
+<span class="sd">    HTML output since it is something like whitespace, a comma or &#39;for the&#39; or</span>
+<span class="sd">    a colon.</span>
+
+<span class="sd">    If a list item is a tuple, author_search_query_str will be something like</span>
+<span class="sd">    &quot;Webb J E&quot; which can be used to query the search service.</span>
+
+<span class="sd">    name_text will be the text to put in side the &lt;a&gt; tag. Such as</span>
+<span class="sd">    &quot;James E. Webb,&quot;</span>
+
+<span class="sd">    DON&#39;T URL_encode, do that in template</span>
+<span class="sd">    DON&#39;T do entities, do that in template</span>
+<span class="sd">    DON&#39;T escape utf8 for HTML, just return utf8</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">AuthorList</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">splits</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">split_authors</span><span class="p">(</span><span class="n">authors</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">splits</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_divider</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">is_affiliation</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">item</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">is_short</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_etal</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">out</span><span class="p">,</span> <span class="o">*</span><span class="n">_link_for_name_or_collab</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<span class="k">def</span> <span class="nf">_link_for_name_or_collab</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthorList</span><span class="p">:</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># deal with &#39;for the _whatever_&#39; or &#39;for _whatever_&#39; or &#39;the&#39;</span>
+    <span class="n">not_linked</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s*((for\s+the\s+)|(the\s+))(?P&lt;rest&gt;.*)&#39;</span><span class="p">,</span>
+                          <span class="n">item</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">not_linked</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">not_linked</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">not_linked</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;rest&#39;</span><span class="p">)</span>
+
+    <span class="n">item</span> <span class="o">=</span> <span class="n">tex2utf</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\.(?!) &#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">(,| )&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([^</span><span class="se">\\</span><span class="s1">])~&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;,\s*&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+    <span class="n">colab_m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^(.+)\s+(collaboration|group|team)(\s?.*)&#39;</span><span class="p">,</span>
+                       <span class="n">item</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">colab_m</span><span class="p">:</span>
+        <span class="n">colab</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;{colab_m.group(1)} {colab_m.group(2)}&#39;</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">item</span><span class="p">,</span> <span class="n">colab</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="n">the_m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;the (.*)&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">the_m</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">item</span><span class="p">,</span> <span class="n">the_m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="c1"># else we&#39;ll treat it as a name</span>
+    <span class="n">name_bits</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">name_bits</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="n">item</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Do not include Jr, Sr, III, etc. in search</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Jr\b|Sr\b|[IV]{2, }]&#39;</span><span class="p">,</span> <span class="n">name_bits</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">name_bits</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+        <span class="n">surname</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">name_bits</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">surname</span> <span class="o">=</span> <span class="n">name_bits</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+        <span class="n">name_bit_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">surname_prefixes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">initials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">found_prefix</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">for</span> <span class="n">name_bit</span> <span class="ow">in</span> <span class="n">name_bits</span><span class="p">:</span>
+            <span class="n">name_bit_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">found_prefix</span> <span class="ow">or</span> <span class="p">(</span><span class="n">name_bit_count</span> <span class="o">&gt;</span> <span class="mi">1</span>
+                                 <span class="ow">and</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;^(&#39;</span> <span class="o">+</span> <span class="n">PREFIX_MATCH</span> <span class="o">+</span> <span class="s1">&#39;)$&#39;</span><span class="p">,</span>
+                                              <span class="n">name_bit</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">))):</span>
+                <span class="n">surname_prefixes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name_bit</span><span class="p">)</span>
+                <span class="n">found_prefix</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">initials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name_bit</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">sur_initials</span> <span class="o">=</span> <span class="n">surname</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> \
+            <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">initials</span><span class="p">)</span> <span class="k">if</span> <span class="n">initials</span> <span class="k">else</span> <span class="n">surname</span>
+        <span class="n">query_str</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="o">*</span><span class="n">surname_prefixes</span><span class="p">,</span> <span class="n">sur_initials</span><span class="p">])</span>
+
+    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">item</span><span class="p">,</span> <span class="n">query_str</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">out</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,243 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.routes.ui module &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-browse.routes.ui">
+<span id="browse-routes-ui-module"></span><h1>browse.routes.ui module<a class="headerlink" href="#module-browse.routes.ui" title="Permalink to this headline">¶</a></h1>
+<p>Provides the user intefaces for browse.</p>
+<dl class="function">
+<dt id="browse.routes.ui.abstract">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">abstract</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#abstract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.abstract" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract (abs) page view.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.apply_response_headers">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">apply_response_headers</code><span class="sig-paren">(</span><em>response: flask.wrappers.Response</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#apply_response_headers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.apply_response_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply response headers to all responses.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.bare_abs">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">bare_abs</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#bare_abs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.bare_abs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check several legacy request parameters.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.before_request">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">before_request</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/browse/routes/ui.html#before_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.before_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get instituional affiliation from session.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.cits">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">cits</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#cits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.cits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show the citations for an artcile.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.clickthrough">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">clickthrough</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#clickthrough"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.clickthrough" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate redirect for clickthrough links.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.div">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">div</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#div"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.div" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get div for article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.eprint">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">eprint</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#eprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.eprint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get e-print (source) for article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.form">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">form</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#form"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.form" title="Permalink to this definition">¶</a></dt>
+<dd><p>Old form interface to lists of articles.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.format">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">format</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get formats article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.home">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">home</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#home"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.home" title="Permalink to this definition">¶</a></dt>
+<dd><p>Home page view.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.html">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">html</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#html"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.html" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get html for article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.list_articles">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">list_articles</code><span class="sig-paren">(</span><em>context: str</em>, <em>subcontext: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#list_articles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.list_articles" title="Permalink to this definition">¶</a></dt>
+<dd><p>List articles by context, month etc.</p>
+<p>Context might be a context or an archive Subcontext should be
+‘recent’ ‘new’ or a string of format yymm</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.pdf">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">pdf</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#pdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get PDF for article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.previous_next">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">previous_next</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Union[str, flask.wrappers.Response]<a class="reference internal" href="../_modules/browse/routes/ui.html#previous_next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.previous_next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Previous/Next navigation used on /abs page.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.ps">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">ps</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#ps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.ps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get ps for article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.refs">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">refs</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#refs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.refs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show the references for an article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.show_email">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">show_email</code><span class="sig-paren">(</span><em>show_email_hash: str</em>, <em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#show_email"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.show_email" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show the email for the submitter for an article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.show_endorsers">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">show_endorsers</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#show_endorsers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.show_endorsers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show endorsers for an article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.src">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">src</code><span class="sig-paren">(</span><em>arxiv_id: str</em>, <em>file_name: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#src"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.src" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get src for article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.tb">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">tb</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; flask.wrappers.Response<a class="reference internal" href="../_modules/browse/routes/ui.html#tb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.tb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get trackbacks for article.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.routes.ui.trackback">
+<code class="descclassname">browse.routes.ui.</code><code class="descname">trackback</code><span class="sig-paren">(</span><em>arxiv_id: str</em><span class="sig-paren">)</span> &#x2192; Union[str, flask.wrappers.Response]<a class="reference internal" href="../_modules/browse/routes/ui.html#trackback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.routes.ui.trackback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Route to define new trackbacks for papers.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/browse.routes.ui.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

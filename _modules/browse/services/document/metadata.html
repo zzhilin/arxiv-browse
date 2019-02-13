@@ -1,0 +1,835 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.services.document.metadata &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for browse.services.document.metadata</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Parse fields from a single arXiv abstract (.abs) file.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">dateutil</span> <span class="k">import</span> <span class="n">parser</span>
+<span class="kn">from</span> <span class="nn">pytz</span> <span class="k">import</span> <span class="n">timezone</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">dateutil.tz</span> <span class="k">import</span> <span class="n">tzutc</span><span class="p">,</span> <span class="n">gettz</span>
+<span class="kn">import</span> <span class="nn">dataclasses</span>
+
+<span class="kn">from</span> <span class="nn">arxiv</span> <span class="k">import</span> <span class="n">taxonomy</span>
+<span class="kn">from</span> <span class="nn">arxiv.base.globals</span> <span class="k">import</span> <span class="n">get_application_config</span><span class="p">,</span> <span class="n">get_application_global</span>
+<span class="kn">from</span> <span class="nn">browse.domain</span> <span class="k">import</span> <span class="n">License</span>
+<span class="kn">from</span> <span class="nn">browse.domain.metadata</span> <span class="k">import</span> <span class="n">Archive</span><span class="p">,</span> <span class="n">AuthorList</span><span class="p">,</span> <span class="n">Category</span><span class="p">,</span> \
+    <span class="n">DocMetadata</span><span class="p">,</span> <span class="n">Group</span><span class="p">,</span> <span class="n">SourceType</span><span class="p">,</span> <span class="n">Submitter</span><span class="p">,</span> <span class="n">VersionEntry</span>
+<span class="kn">from</span> <span class="nn">browse.domain.identifier</span> <span class="k">import</span> <span class="n">Identifier</span><span class="p">,</span> <span class="n">IdentifierException</span>
+<span class="kn">from</span> <span class="nn">browse.services.document.config.deleted_papers</span> <span class="k">import</span> <span class="n">DELETED_PAPERS</span>
+<span class="kn">from</span> <span class="nn">browse.services.util.formats</span> <span class="k">import</span> <span class="n">VALID_SOURCE_EXTENSIONS</span><span class="p">,</span> \
+    <span class="n">formats_from_source_file_name</span><span class="p">,</span> <span class="n">formats_from_source_type</span><span class="p">,</span> \
+    <span class="n">has_ancillary_files</span><span class="p">,</span> <span class="n">list_ancillary_files</span>
+<span class="kn">from</span> <span class="nn">browse.services.document</span> <span class="k">import</span> <span class="n">cache</span>
+
+
+<span class="n">ARXIV_BUSINESS_TZ</span> <span class="o">=</span> <span class="n">timezone</span><span class="p">(</span><span class="s1">&#39;US/Eastern&#39;</span><span class="p">)</span>
+
+<span class="n">RE_ABS_COMPONENTS</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^</span><span class="se">\\\\</span><span class="s1">\n&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+<span class="n">RE_FROM_FIELD</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;(?P&lt;from&gt;From:\s*)(?P&lt;name&gt;[^&lt;]+)?\s+(&lt;(?P&lt;email&gt;.*)&gt;)?&#39;</span><span class="p">)</span>
+<span class="n">RE_DATE_COMPONENTS</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;^Date\s*(?::|\(revised\s*(?P&lt;version&gt;.*?)\):)\s*(?P&lt;date&gt;.*?)&#39;</span>
+    <span class="sa">r</span><span class="s1">&#39;(?:\s+\((?P&lt;size_kilobytes&gt;\d+)kb,?(?P&lt;source_type&gt;.*)\))?$&#39;</span><span class="p">)</span>
+<span class="n">RE_FIELD_COMPONENTS</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;^(?P&lt;field&gt;[-a-z\)\(]+\s*):\s*(?P&lt;value&gt;.*)&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+<span class="n">RE_ARXIV_ID_FROM_PREHISTORY</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;(Paper:\s+|arXiv:)(?P&lt;arxiv_id&gt;\S+)&#39;</span><span class="p">)</span>
+
+
+<span class="n">NAMED_FIELDS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Title&#39;</span><span class="p">,</span> <span class="s1">&#39;Authors&#39;</span><span class="p">,</span> <span class="s1">&#39;Categories&#39;</span><span class="p">,</span> <span class="s1">&#39;Comments&#39;</span><span class="p">,</span> <span class="s1">&#39;Proxy&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Report-no&#39;</span><span class="p">,</span> <span class="s1">&#39;ACM-class&#39;</span><span class="p">,</span> <span class="s1">&#39;MSC-class&#39;</span><span class="p">,</span> <span class="s1">&#39;Journal-ref&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;DOI&#39;</span><span class="p">,</span> <span class="s1">&#39;License&#39;</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Fields that may be parsed from the key-value pairs in second</span>
+<span class="sd">major component of .abs string. Field names are not normalized.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">REQUIRED_FIELDS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;authors&#39;</span><span class="p">,</span> <span class="s1">&#39;abstract&#39;</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Required parsed fields with normalized field names.</span>
+
+<span class="sd">Note the absense of &#39;categories&#39; as a required field. A subset of version-</span>
+<span class="sd">affixed .abs files with the old identifiers predate the introduction of</span>
+<span class="sd">categories and therefore do not have a &quot;Categories:&quot; line; only the (higher-</span>
+<span class="sd">level) archive and group can be be inferred, and this must be done via the</span>
+<span class="sd">identifier itself.</span>
+
+<span class="sd">The latest versions of these papers should always have the &quot;Categories:&quot; line.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="AbsException"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsException">[docs]</a><span class="k">class</span> <span class="nc">AbsException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Error class for general arXiv .abs exceptions.&quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbsNotFoundException"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsNotFoundException">[docs]</a><span class="k">class</span> <span class="nc">AbsNotFoundException</span><span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Error class for arXiv .abs file not found exceptions.&quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbsVersionNotFoundException"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsVersionNotFoundException">[docs]</a><span class="k">class</span> <span class="nc">AbsVersionNotFoundException</span><span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Error class for arXiv .abs file version not found exceptions.&quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbsParsingException"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsParsingException">[docs]</a><span class="k">class</span> <span class="nc">AbsParsingException</span><span class="p">(</span><span class="ne">OSError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Error class for arXiv .abs file parsing exceptions.&quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbsDeletedException"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsDeletedException">[docs]</a><span class="k">class</span> <span class="nc">AbsDeletedException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Error class for arXiv papers that have been deleted.&quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbsMetaSession"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsMetaSession">[docs]</a><span class="k">class</span> <span class="nc">AbsMetaSession</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class for arXiv document metadata sessions.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latest_versions_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">original_versions_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the document metadata session.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">latest_versions_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AbsException</span><span class="p">(</span><span class="s1">&#39;Path to latest .abs versions &#39;</span>
+                               <span class="n">f</span><span class="s1">&#39;&quot;</span><span class="si">{latest_versions_path}</span><span class="s1">&quot; does not exist&#39;</span>
+                               <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">original_versions_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AbsException</span><span class="p">(</span><span class="s1">&#39;Path to original .abs versions &#39;</span>
+                               <span class="n">f</span><span class="s1">&#39;&quot;</span><span class="si">{original_versions_path}</span><span class="s1">&quot; does not exist&#39;</span>
+                               <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">latest_versions_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">latest_versions_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_versions_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">original_versions_path</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AbsMetaSession.get_abs"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsMetaSession.get_abs">[docs]</a>    <span class="k">def</span> <span class="nf">get_abs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arxiv_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DocMetadata</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Get the .abs metadata for the specified arXiv paper identifier.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        arxiv_id : str</span>
+<span class="sd">            The arXiv identifier string.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`DocMetadata`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">paper_id</span> <span class="o">=</span> <span class="n">Identifier</span><span class="p">(</span><span class="n">arxiv_id</span><span class="o">=</span><span class="n">arxiv_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">paper_id</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="n">DELETED_PAPERS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AbsDeletedException</span><span class="p">(</span><span class="n">DELETED_PAPERS</span><span class="p">[</span><span class="n">paper_id</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+
+        <span class="n">latest_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_version</span><span class="p">(</span><span class="n">identifier</span><span class="o">=</span><span class="n">paper_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">paper_id</span><span class="o">.</span><span class="n">has_version</span> \
+           <span class="ow">or</span> <span class="n">paper_id</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="n">latest_version</span><span class="o">.</span><span class="n">version</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">latest_version</span><span class="p">,</span>
+                                       <span class="n">is_definitive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                       <span class="n">is_latest</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">this_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_version</span><span class="p">(</span><span class="n">identifier</span><span class="o">=</span><span class="n">paper_id</span><span class="p">,</span>
+                                             <span class="n">version</span><span class="o">=</span><span class="n">paper_id</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">AbsNotFoundException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">paper_id</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">AbsVersionNotFoundException</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="c1"># Several fields need to reflect the latest version&#39;s data</span>
+        <span class="n">combined_version</span><span class="p">:</span> <span class="n">DocMetadata</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">this_version</span><span class="p">,</span>
+            <span class="n">version_history</span><span class="o">=</span><span class="n">latest_version</span><span class="o">.</span><span class="n">version_history</span><span class="p">,</span>
+            <span class="n">categories</span><span class="o">=</span><span class="n">latest_version</span><span class="o">.</span><span class="n">categories</span><span class="p">,</span>
+            <span class="n">primary_category</span><span class="o">=</span><span class="n">latest_version</span><span class="o">.</span><span class="n">primary_category</span><span class="p">,</span>
+            <span class="n">secondary_categories</span><span class="o">=</span><span class="n">latest_version</span><span class="o">.</span><span class="n">secondary_categories</span><span class="p">,</span>
+            <span class="n">primary_archive</span><span class="o">=</span><span class="n">latest_version</span><span class="o">.</span><span class="n">primary_archive</span><span class="p">,</span>
+            <span class="n">primary_group</span><span class="o">=</span><span class="n">latest_version</span><span class="o">.</span><span class="n">primary_group</span><span class="p">,</span>
+            <span class="n">is_definitive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">is_latest</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">combined_version</span></div>
+
+    <span class="k">def</span> <span class="nf">_next_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="n">Identifier</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Identifier&#39;</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get next consecutive Identifier relative to the provided Identifier.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        identifier : :class:`Identifier`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`Identifier`</span>
+<span class="sd">            The next Indentifier in sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">next_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">identifier</span><span class="o">.</span><span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+                <span class="n">identifier</span><span class="o">.</span><span class="n">month</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+                <span class="n">identifier</span><span class="o">.</span><span class="n">num</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_year</span> <span class="o">=</span> <span class="n">identifier</span><span class="o">.</span><span class="n">year</span>
+            <span class="n">new_month</span> <span class="o">=</span> <span class="n">identifier</span><span class="o">.</span><span class="n">month</span>
+            <span class="n">new_num</span> <span class="o">=</span> <span class="n">identifier</span><span class="o">.</span><span class="n">num</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">identifier</span><span class="o">.</span><span class="n">is_old_id</span> <span class="ow">and</span> <span class="n">new_num</span> <span class="o">&gt;</span> <span class="mi">999</span><span class="p">)</span> \
+               <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">identifier</span><span class="o">.</span><span class="n">is_old_id</span>
+                   <span class="ow">and</span> <span class="n">identifier</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="mi">2015</span>
+                   <span class="ow">and</span> <span class="n">new_num</span> <span class="o">&gt;</span> <span class="mi">9999</span><span class="p">)</span> \
+               <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">identifier</span><span class="o">.</span><span class="n">is_old_id</span>
+                   <span class="ow">and</span> <span class="n">identifier</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="mi">2015</span> <span class="ow">and</span> <span class="n">new_num</span> <span class="o">&gt;</span> <span class="mi">99999</span><span class="p">):</span>
+                <span class="n">new_num</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">new_month</span> <span class="o">=</span> <span class="n">new_month</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">new_month</span> <span class="o">&gt;</span> <span class="mi">12</span><span class="p">:</span>
+                    <span class="n">new_month</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="n">new_year</span> <span class="o">=</span> <span class="n">new_year</span> <span class="o">+</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">identifier</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span>
+                <span class="n">next_id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{:02d}{:02d}{:03d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">identifier</span><span class="o">.</span><span class="n">archive</span><span class="p">,</span> <span class="n">new_year</span> <span class="o">%</span> <span class="mi">100</span><span class="p">,</span> <span class="n">new_month</span><span class="p">,</span> <span class="n">new_num</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">new_year</span> <span class="o">&gt;=</span> <span class="mi">2015</span><span class="p">:</span>
+                    <span class="n">next_id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:02d}{:02d}</span><span class="s1">.</span><span class="si">{:05d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">new_year</span> <span class="o">%</span> <span class="mi">100</span><span class="p">,</span> <span class="n">new_month</span><span class="p">,</span> <span class="n">new_num</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">next_id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:02d}{:02d}</span><span class="s1">.</span><span class="si">{:04d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">new_year</span> <span class="o">%</span> <span class="mi">100</span><span class="p">,</span> <span class="n">new_month</span><span class="p">,</span> <span class="n">new_num</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Identifier</span><span class="p">(</span><span class="n">arxiv_id</span><span class="o">=</span><span class="n">next_id</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">IdentifierException</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_next_yymm_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="n">Identifier</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Identifier</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get the first identifier for the next month.&quot;&quot;&quot;</span>
+        <span class="n">next_yymm_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">identifier</span><span class="o">.</span><span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+                <span class="n">identifier</span><span class="o">.</span><span class="n">month</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_year</span> <span class="o">=</span> <span class="n">identifier</span><span class="o">.</span><span class="n">year</span>
+            <span class="n">new_month</span> <span class="o">=</span> <span class="n">identifier</span><span class="o">.</span><span class="n">month</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">new_num</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">new_month</span> <span class="o">&gt;</span> <span class="mi">12</span><span class="p">:</span>
+                <span class="n">new_month</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">new_year</span> <span class="o">=</span> <span class="n">new_year</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">identifier</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span>
+                <span class="n">next_yymm_id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{:02d}{:02d}{:03d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">identifier</span><span class="o">.</span><span class="n">archive</span><span class="p">,</span> <span class="n">new_year</span> <span class="o">%</span> <span class="mi">100</span><span class="p">,</span> <span class="n">new_month</span><span class="p">,</span> <span class="n">new_num</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">new_year</span> <span class="o">&gt;=</span> <span class="mi">2015</span><span class="p">:</span>
+                <span class="n">next_yymm_id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:02d}{:02d}</span><span class="s1">.</span><span class="si">{:05d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">new_year</span> <span class="o">%</span> <span class="mi">100</span><span class="p">,</span> <span class="n">new_month</span><span class="p">,</span> <span class="n">new_num</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">next_yymm_id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:02d}{:02d}</span><span class="s1">.</span><span class="si">{:04d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">new_year</span> <span class="o">%</span> <span class="mi">100</span><span class="p">,</span> <span class="n">new_month</span><span class="p">,</span> <span class="n">new_num</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Identifier</span><span class="p">(</span><span class="n">arxiv_id</span><span class="o">=</span><span class="n">next_yymm_id</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">IdentifierException</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="AbsMetaSession.get_next_id"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsMetaSession.get_next_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_next_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="n">Identifier</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Identifier&#39;</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get the next identifier in sequence if it exists in the repository.</span>
+
+<span class="sd">        Under certain conditions this is called to generate the &quot;next&quot; link</span>
+<span class="sd">        in the &quot;browse context&quot; portion of the abs page rendering.</span>
+<span class="sd">        These conditions are dependent on the identifier and context; it</span>
+<span class="sd">        emulates legacy functionality. It is recommended to deprecate</span>
+<span class="sd">        this function once the /prevnext route is fixed (or replaced) to</span>
+<span class="sd">        handle old identifiers correctly.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        identifier : :class:`Identifier`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`Identifier`</span>
+<span class="sd">            The next identifier in sequence that exists in the repository.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">next_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_id</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">next_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_path</span><span class="p">(</span><span class="n">identifier</span><span class="o">=</span><span class="n">next_id</span><span class="p">)</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{next_id.filename}</span><span class="s1">.abs&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">next_id</span>
+
+        <span class="n">next_yymm_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next_yymm_id</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">next_yymm_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_path</span><span class="p">(</span><span class="n">identifier</span><span class="o">=</span><span class="n">next_yymm_id</span><span class="p">)</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{next_yymm_id.filename}</span><span class="s1">.abs&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">next_yymm_id</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+    <span class="k">def</span> <span class="nf">_previous_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="n">Identifier</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Identifier&#39;</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get previous consecutive Identifier relative to provided Identifier.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        identifier : :class:`Identifier`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`Identifier`</span>
+<span class="sd">            The previous Indentifier in sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">previous_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">identifier</span><span class="o">.</span><span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+                <span class="n">identifier</span><span class="o">.</span><span class="n">month</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+                <span class="n">identifier</span><span class="o">.</span><span class="n">num</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_year</span> <span class="o">=</span> <span class="n">identifier</span><span class="o">.</span><span class="n">year</span>
+            <span class="n">new_month</span> <span class="o">=</span> <span class="n">identifier</span><span class="o">.</span><span class="n">month</span>
+            <span class="n">new_num</span> <span class="o">=</span> <span class="n">identifier</span><span class="o">.</span><span class="n">num</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">new_num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">new_month</span> <span class="o">=</span> <span class="n">new_month</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">new_month</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">new_month</span> <span class="o">=</span> <span class="mi">12</span>
+                    <span class="n">new_year</span> <span class="o">=</span> <span class="n">new_year</span> <span class="o">-</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">identifier</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">new_num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">new_num</span> <span class="o">=</span> <span class="mi">999</span>
+                <span class="n">previous_id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{:02d}{:02d}{:03d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">identifier</span><span class="o">.</span><span class="n">archive</span><span class="p">,</span> <span class="n">new_year</span> <span class="o">%</span> <span class="mi">100</span><span class="p">,</span> <span class="n">new_month</span><span class="p">,</span> <span class="n">new_num</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">new_year</span> <span class="o">&gt;=</span> <span class="mi">2015</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">new_num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">new_num</span> <span class="o">=</span> <span class="mi">99999</span>
+                    <span class="n">previous_id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:02d}{:02d}</span><span class="s1">.</span><span class="si">{:05d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">new_year</span> <span class="o">%</span> <span class="mi">100</span><span class="p">,</span> <span class="n">new_month</span><span class="p">,</span> <span class="n">new_num</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">new_num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">new_num</span> <span class="o">=</span> <span class="mi">9999</span>
+                    <span class="n">previous_id</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:02d}{:02d}</span><span class="s1">.</span><span class="si">{:04d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">new_year</span> <span class="o">%</span> <span class="mi">100</span><span class="p">,</span> <span class="n">new_month</span><span class="p">,</span> <span class="n">new_num</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Identifier</span><span class="p">(</span><span class="n">arxiv_id</span><span class="o">=</span><span class="n">previous_id</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">IdentifierException</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="AbsMetaSession.get_previous_id"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsMetaSession.get_previous_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_previous_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="n">Identifier</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Identifier</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get previous identifier in sequence if it exists in repository.</span>
+
+<span class="sd">        Under certain conditions this is called to generate the &quot;previous&quot; link</span>
+<span class="sd">        in the &quot;browse context&quot; portion of the abs page rendering.</span>
+<span class="sd">        These conditions are dependent on the identifier and context; it</span>
+<span class="sd">        emulates legacy functionality. It is recommended to deprecate</span>
+<span class="sd">        this function once the /prevnext route is fixed (or replaced) to</span>
+<span class="sd">        handle old identifiers correctly.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        identifier : :class:`Identifier`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`Identifier`</span>
+<span class="sd">            The previous identifier in sequence that exists in the repository.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">previous_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_previous_id</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">previous_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">identifier</span><span class="o">.</span><span class="n">year</span> <span class="o">==</span> <span class="n">previous_id</span><span class="o">.</span><span class="n">year</span> \
+           <span class="ow">and</span> <span class="n">identifier</span><span class="o">.</span><span class="n">month</span> <span class="o">==</span> <span class="n">previous_id</span><span class="o">.</span><span class="n">month</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">previous_id</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_path</span><span class="p">(</span><span class="n">previous_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">file_list</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">abs_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">file_list</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.abs&#39;</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">abs_files</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">max_id</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">abs_files</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">previous_id</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span>
+                    <span class="n">short_id</span> <span class="o">=</span> <span class="n">Identifier</span><span class="p">(</span>
+                        <span class="n">arxiv_id</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{previous_id.archive}</span><span class="s1">/</span><span class="si">{max_id}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">short_id</span> <span class="o">=</span> <span class="n">Identifier</span><span class="p">(</span><span class="n">arxiv_id</span><span class="o">=</span><span class="n">max_id</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">short_id</span>
+
+            <span class="k">except</span> <span class="n">IdentifierException</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_source_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docmeta</span><span class="p">:</span> <span class="n">DocMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get the absolute path of this DocMetadata&#39;s source file.&quot;&quot;&quot;</span>
+        <span class="n">identifier</span> <span class="o">=</span> <span class="n">docmeta</span><span class="o">.</span><span class="n">arxiv_identifier</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">docmeta</span><span class="o">.</span><span class="n">version</span>
+        <span class="n">file_noex</span> <span class="o">=</span> <span class="n">identifier</span><span class="o">.</span><span class="n">filename</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">docmeta</span><span class="o">.</span><span class="n">is_latest</span><span class="p">:</span>
+            <span class="n">parent_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_path</span><span class="p">(</span><span class="n">identifier</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span>
+            <span class="n">file_noex</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{file_noex}</span><span class="s1">v</span><span class="si">{version}</span><span class="s1">&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_path</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">extension</span> <span class="ow">in</span> <span class="n">VALID_SOURCE_EXTENSIONS</span><span class="p">:</span>
+            <span class="n">possible_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">parent_path</span><span class="p">,</span>
+                <span class="n">f</span><span class="s1">&#39;</span><span class="si">{file_noex}{extension[0]}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">possible_path</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">possible_path</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="AbsMetaSession.get_dissemination_formats"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsMetaSession.get_dissemination_formats">[docs]</a>    <span class="k">def</span> <span class="nf">get_dissemination_formats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                  <span class="n">docmeta</span><span class="p">:</span> <span class="n">DocMetadata</span><span class="p">,</span>
+                                  <span class="n">format_pref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                  <span class="n">add_sciencewise</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get a list of formats that can be disseminated for this DocMetadata.</span>
+
+<span class="sd">        Several checks are performed to determine available dissemination</span>
+<span class="sd">        formats:</span>
+<span class="sd">            1. a check for source files with specific, valid file name</span>
+<span class="sd">               extensions (i.e. for a subset of the allowed source file name</span>
+<span class="sd">               extensions, the dissemintation formats are predictable)</span>
+<span class="sd">            2. if formats cannot be inferred from the source file, inspect the</span>
+<span class="sd">               source type in the document metadata.</span>
+
+<span class="sd">        Format names are strings. These include &#39;src&#39;, &#39;pdf&#39;, &#39;ps&#39;, &#39;html&#39;,</span>
+<span class="sd">        &#39;pdfonly&#39;, &#39;other&#39;, &#39;dvi&#39;, &#39;ps(400)&#39;, &#39;ps(600)&#39;, &#39;nops&#39;.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        docmeta : :class:`DocMetadata`</span>
+<span class="sd">        format_pref : str</span>
+<span class="sd">            The format preference string.</span>
+<span class="sd">        add_sciencewise : bool</span>
+<span class="sd">            Specify whether to include &#39;sciencewise_pdf&#39; format in list.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        List[str]</span>
+<span class="sd">            A list of format strings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">formats</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># first, get possible list of formats based on available source file</span>
+        <span class="n">source_file_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_source_path</span><span class="p">(</span><span class="n">docmeta</span><span class="p">)</span>
+        <span class="n">source_file_formats</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">source_file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">source_file_formats</span> <span class="o">=</span> \
+                <span class="n">formats_from_source_file_name</span><span class="p">(</span><span class="n">source_file_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">source_file_formats</span><span class="p">:</span>
+            <span class="n">formats</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">source_file_formats</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">add_sciencewise</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">formats</span> <span class="ow">and</span> <span class="n">formats</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;other&#39;</span><span class="p">:</span>
+                    <span class="n">formats</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;sciencewise_pdf&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">formats</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;sciencewise_pdf&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># check source type from metadata, with consideration of</span>
+            <span class="c1"># user format preference and cache</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="n">docmeta</span><span class="o">.</span><span class="n">version</span>
+            <span class="n">format_code</span> <span class="o">=</span> <span class="n">docmeta</span><span class="o">.</span><span class="n">version_history</span><span class="p">[</span><span class="n">version</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">source_type</span><span class="o">.</span><span class="n">code</span>
+            <span class="n">cached_ps_file_path</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get_cache_file_path</span><span class="p">(</span>
+                <span class="n">docmeta</span><span class="p">,</span>
+                <span class="s1">&#39;ps&#39;</span><span class="p">)</span>
+            <span class="n">cache_flag</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">cached_ps_file_path</span> \
+                    <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">cached_ps_file_path</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> \
+                    <span class="ow">and</span> <span class="n">source_file_path</span> \
+                    <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">source_file_path</span><span class="p">)</span> \
+                    <span class="o">&lt;</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">cached_ps_file_path</span><span class="p">):</span>
+                <span class="n">cache_flag</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">source_type_formats</span> <span class="o">=</span> <span class="n">formats_from_source_type</span><span class="p">(</span><span class="n">format_code</span><span class="p">,</span>
+                                                           <span class="n">format_pref</span><span class="p">,</span>
+                                                           <span class="n">cache_flag</span><span class="p">,</span>
+                                                           <span class="n">add_sciencewise</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">source_type_formats</span><span class="p">:</span>
+                <span class="n">formats</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">source_type_formats</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">formats</span></div>
+
+<div class="viewcode-block" id="AbsMetaSession.get_ancillary_files"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsMetaSession.get_ancillary_files">[docs]</a>    <span class="k">def</span> <span class="nf">get_ancillary_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docmeta</span><span class="p">:</span> <span class="n">DocMetadata</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get list of ancillary file names and sizes.&quot;&quot;&quot;</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">docmeta</span><span class="o">.</span><span class="n">version</span>
+        <span class="n">format_code</span> <span class="o">=</span> <span class="n">docmeta</span><span class="o">.</span><span class="n">version_history</span><span class="p">[</span><span class="n">version</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">source_type</span><span class="o">.</span><span class="n">code</span>
+        <span class="k">if</span> <span class="n">has_ancillary_files</span><span class="p">(</span><span class="n">format_code</span><span class="p">):</span>
+            <span class="n">source_file_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_source_path</span><span class="p">(</span><span class="n">docmeta</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">source_file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">list_ancillary_files</span><span class="p">(</span><span class="n">source_file_path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="AbsMetaSession.parse_abs_file"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.AbsMetaSession.parse_abs_file">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">parse_abs_file</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DocMetadata</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Parse arXiv .abs file.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;latin-1&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">absf</span><span class="p">:</span>
+                <span class="n">raw</span> <span class="o">=</span> <span class="n">absf</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AbsNotFoundException</span>
+        <span class="k">except</span> <span class="ne">UnicodeDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># TODO: log this</span>
+            <span class="k">raise</span> <span class="n">AbsParsingException</span><span class="p">(</span>
+                <span class="n">f</span><span class="s1">&#39;Failed to decode .abs file &quot;</span><span class="si">{filename}</span><span class="s1">&quot;: </span><span class="si">{e}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># TODO: clean up</span>
+        <span class="n">modified</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">tz</span><span class="o">=</span><span class="n">gettz</span><span class="p">(</span><span class="s1">&#39;US/Eastern&#39;</span><span class="p">))</span>
+        <span class="n">modified</span> <span class="o">=</span> <span class="n">modified</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">tz</span><span class="o">=</span><span class="n">tzutc</span><span class="p">())</span>
+
+        <span class="c1"># there are two main components to an .abs file that contain data,</span>
+        <span class="c1"># but the split must always return four components</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="n">RE_ABS_COMPONENTS</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">components</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AbsParsingException</span><span class="p">(</span>
+                <span class="s1">&#39;Unexpected number of components parsed from .abs.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># everything else is in the second main component</span>
+        <span class="n">prehistory</span><span class="p">,</span> <span class="n">misc_fields</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\n\n&#39;</span><span class="p">,</span> <span class="n">components</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">fields</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">AbsMetaSession</span><span class="o">.</span><span class="n">_parse_metadata_fields</span><span class="p">(</span><span class="n">key_value_block</span><span class="o">=</span><span class="n">misc_fields</span><span class="p">)</span>
+
+        <span class="c1"># abstract is the first main component</span>
+        <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;abstract&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">components</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">id_match</span> <span class="o">=</span> <span class="n">RE_ARXIV_ID_FROM_PREHISTORY</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">prehistory</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">id_match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AbsParsingException</span><span class="p">(</span>
+                <span class="s1">&#39;Could not extract arXiv ID from prehistory component.&#39;</span><span class="p">)</span>
+
+        <span class="n">arxiv_id</span> <span class="o">=</span> <span class="n">id_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;arxiv_id&#39;</span><span class="p">)</span>
+
+        <span class="n">prehistory</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^.*\n&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">prehistory</span><span class="p">)</span>
+        <span class="n">parsed_version_entries</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\n&#39;</span><span class="p">,</span> <span class="n">prehistory</span><span class="p">)</span>
+
+        <span class="c1"># submitter data</span>
+        <span class="n">from_match</span> <span class="o">=</span> <span class="n">RE_FROM_FIELD</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">parsed_version_entries</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">from_match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AbsParsingException</span><span class="p">(</span><span class="s1">&#39;Could not extract submitter data.&#39;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">from_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+        <span class="n">email</span> <span class="o">=</span> <span class="n">from_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">)</span>
+
+        <span class="c1"># get the version history for this particular version of the document</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">parsed_version_entries</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AbsParsingException</span><span class="p">(</span><span class="s1">&#39;At least one version entry expected.&#39;</span><span class="p">)</span>
+
+        <span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="n">version_history</span><span class="p">,</span> <span class="n">arxiv_id_v</span><span class="p">)</span> \
+            <span class="o">=</span> <span class="n">AbsMetaSession</span><span class="o">.</span><span class="n">_parse_version_entries</span><span class="p">(</span>
+                <span class="n">arxiv_id</span><span class="o">=</span><span class="n">arxiv_id</span><span class="p">,</span>
+                <span class="n">version_entry_list</span><span class="o">=</span><span class="n">parsed_version_entries</span><span class="p">)</span>
+
+        <span class="n">arxiv_identifier</span> <span class="o">=</span> <span class="n">Identifier</span><span class="p">(</span><span class="n">arxiv_id</span><span class="o">=</span><span class="n">arxiv_id</span><span class="p">)</span>
+
+        <span class="c1"># named (key-value) fields</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">rf</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">for</span> <span class="n">rf</span> <span class="ow">in</span> <span class="n">REQUIRED_FIELDS</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AbsParsingException</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;missing required field(s)&#39;</span><span class="p">)</span>
+
+        <span class="c1"># some transformations</span>
+        <span class="n">category_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">primary_category</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;categories&#39;</span> <span class="ow">in</span> <span class="n">fields</span> <span class="ow">and</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;categories&#39;</span><span class="p">]:</span>
+            <span class="n">category_list</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;categories&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">category_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">taxonomy</span><span class="o">.</span><span class="n">CATEGORIES</span><span class="p">:</span>
+                <span class="n">primary_category</span> <span class="o">=</span> <span class="n">Category</span><span class="p">(</span><span class="n">category_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">primary_archive</span> <span class="o">=</span> \
+                    <span class="n">Archive</span><span class="p">(</span>
+                        <span class="n">taxonomy</span><span class="o">.</span><span class="n">CATEGORIES</span><span class="p">[</span><span class="n">primary_category</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s1">&#39;in_archive&#39;</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">arxiv_identifier</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span>
+                <span class="n">primary_archive</span> <span class="o">=</span> <span class="n">Archive</span><span class="p">(</span><span class="n">arxiv_identifier</span><span class="o">.</span><span class="n">archive</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">arxiv_identifier</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span>
+            <span class="n">primary_archive</span> <span class="o">=</span> <span class="n">Archive</span><span class="p">(</span><span class="n">arxiv_identifier</span><span class="o">.</span><span class="n">archive</span><span class="p">)</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AbsException</span><span class="p">(</span><span class="s1">&#39;Cannot infer archive from identifier.&#39;</span><span class="p">)</span>
+
+        <span class="n">doc_license</span><span class="p">:</span> <span class="n">License</span> <span class="o">=</span> \
+            <span class="n">License</span><span class="p">()</span> <span class="k">if</span> <span class="s1">&#39;license&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span> <span class="n">License</span><span class="p">(</span>
+                <span class="n">recorded_uri</span><span class="o">=</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;license&#39;</span><span class="p">])</span>
+        <span class="n">raw_safe</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">RE_FROM_FIELD</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\g&lt;from&gt;\g&lt;name&gt;&#39;</span><span class="p">,</span> <span class="n">raw</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">DocMetadata</span><span class="p">(</span>
+            <span class="n">raw_safe</span><span class="o">=</span><span class="n">raw_safe</span><span class="p">,</span>
+            <span class="n">arxiv_id</span><span class="o">=</span><span class="n">arxiv_id</span><span class="p">,</span>
+            <span class="n">arxiv_id_v</span><span class="o">=</span><span class="n">arxiv_id_v</span><span class="p">,</span>
+            <span class="n">arxiv_identifier</span><span class="o">=</span><span class="n">Identifier</span><span class="p">(</span><span class="n">arxiv_id</span><span class="o">=</span><span class="n">arxiv_id</span><span class="p">),</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">],</span>
+            <span class="n">abstract</span><span class="o">=</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;abstract&#39;</span><span class="p">],</span>
+            <span class="n">authors</span><span class="o">=</span><span class="n">AuthorList</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;authors&#39;</span><span class="p">]),</span>
+            <span class="n">submitter</span><span class="o">=</span><span class="n">Submitter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">),</span>
+            <span class="n">categories</span><span class="o">=</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;categories&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;categories&#39;</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">primary_category</span><span class="o">=</span><span class="n">primary_category</span><span class="p">,</span>
+            <span class="n">primary_archive</span><span class="o">=</span><span class="n">primary_archive</span><span class="p">,</span>
+            <span class="n">primary_group</span><span class="o">=</span><span class="n">Group</span><span class="p">(</span>
+                <span class="n">taxonomy</span><span class="o">.</span><span class="n">ARCHIVES</span><span class="p">[</span><span class="n">primary_archive</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s1">&#39;in_group&#39;</span><span class="p">]),</span>
+            <span class="n">secondary_categories</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">Category</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">category_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">category_list</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">category_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">],</span>
+            <span class="n">journal_ref</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="s1">&#39;journal_ref&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span>
+            <span class="k">else</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;journal_ref&#39;</span><span class="p">],</span>
+            <span class="n">report_num</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="s1">&#39;report_num&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span>
+            <span class="k">else</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;report_num&#39;</span><span class="p">],</span>
+            <span class="n">doi</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="s1">&#39;doi&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;doi&#39;</span><span class="p">],</span>
+            <span class="n">acm_class</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="s1">&#39;acm_class&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;acm_class&#39;</span><span class="p">],</span>
+            <span class="n">msc_class</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="s1">&#39;msc_class&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;msc_class&#39;</span><span class="p">],</span>
+            <span class="n">proxy</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="s1">&#39;proxy&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span> <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;proxy&#39;</span><span class="p">],</span>
+            <span class="n">comments</span><span class="o">=</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;comments&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;comments&#39;</span> <span class="ow">in</span> <span class="n">fields</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+            <span class="n">license</span><span class="o">=</span><span class="n">doc_license</span><span class="p">,</span>
+            <span class="n">version_history</span><span class="o">=</span><span class="n">version_history</span><span class="p">,</span>
+            <span class="n">modified</span><span class="o">=</span><span class="n">modified</span>
+            <span class="c1"># private=private  # TODO, not implemented</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="n">Identifier</span><span class="p">,</span>
+                     <span class="n">version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DocMetadata</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Get a specific version of a paper&#39;s abstract metadata.&quot;&quot;&quot;</span>
+        <span class="n">parent_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parent_path</span><span class="p">(</span><span class="n">identifier</span><span class="o">=</span><span class="n">identifier</span><span class="p">,</span>
+                                            <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parent_path</span><span class="p">,</span>
+                            <span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{identifier.filename}</span><span class="s1">.abs&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">version</span>
+                             <span class="k">else</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{identifier.filename}</span><span class="s1">v</span><span class="si">{version}</span><span class="s1">.abs&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_abs_file</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_parent_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="n">Identifier</span><span class="p">,</span>
+                         <span class="n">version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Get the absolute parent path of the provided identifier.&quot;&quot;&quot;</span>
+        <span class="n">parent_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latest_versions_path</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">version</span>
+             <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_versions_path</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;arxiv&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">identifier</span><span class="o">.</span><span class="n">is_old_id</span> <span class="ow">or</span> <span class="n">identifier</span><span class="o">.</span><span class="n">archive</span> <span class="ow">is</span> <span class="kc">None</span>
+             <span class="k">else</span> <span class="n">identifier</span><span class="o">.</span><span class="n">archive</span><span class="p">),</span>
+            <span class="s1">&#39;papers&#39;</span><span class="p">,</span>
+            <span class="n">identifier</span><span class="o">.</span><span class="n">yymm</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">parent_path</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_version_entries</span><span class="p">(</span><span class="n">arxiv_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version_entry_list</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">VersionEntry</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Parse the version entries from the arXiv .abs file.&quot;&quot;&quot;</span>
+        <span class="n">version_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">version_entries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">parsed_version_entry</span> <span class="ow">in</span> <span class="n">version_entry_list</span><span class="p">:</span>
+            <span class="n">version_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">date_match</span> <span class="o">=</span> <span class="n">RE_DATE_COMPONENTS</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">parsed_version_entry</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">date_match</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">AbsParsingException</span><span class="p">(</span>
+                    <span class="s1">&#39;Could not extract date components from date line.&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">sd</span> <span class="o">=</span> <span class="n">date_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">)</span>
+                <span class="n">submitted_date</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">date_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">AbsParsingException</span><span class="p">(</span>
+                    <span class="n">f</span><span class="s1">&#39;Could not parse submitted date </span><span class="si">{sd}</span><span class="s1"> as datetime&#39;</span><span class="p">)</span>
+
+            <span class="n">source_type</span> <span class="o">=</span> <span class="n">SourceType</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="n">date_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;source_type&#39;</span><span class="p">))</span>
+            <span class="n">ve</span> <span class="o">=</span> <span class="n">VersionEntry</span><span class="p">(</span>
+                <span class="n">raw</span><span class="o">=</span><span class="n">date_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+                <span class="n">source_type</span><span class="o">=</span><span class="n">source_type</span><span class="p">,</span>
+                <span class="n">size_kilobytes</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">date_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;size_kilobytes&#39;</span><span class="p">)),</span>
+                <span class="n">submitted_date</span><span class="o">=</span><span class="n">submitted_date</span><span class="p">,</span>
+                <span class="n">version</span><span class="o">=</span><span class="n">version_count</span>
+            <span class="p">)</span>
+            <span class="n">version_entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ve</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">version_count</span><span class="p">,</span>
+            <span class="n">version_entries</span><span class="p">,</span>
+            <span class="n">f</span><span class="s2">&quot;</span><span class="si">{arxiv_id}</span><span class="s2">v&quot;</span>
+            <span class="n">f</span><span class="s2">&quot;</span><span class="si">{version_entries[-1].version}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_metadata_fields</span><span class="p">(</span><span class="n">key_value_block</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Parse the key-value block from the arXiv .abs string.&quot;&quot;&quot;</span>
+        <span class="n">key_value_block</span> <span class="o">=</span> <span class="n">key_value_block</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span>
+        <span class="n">field_lines</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\n&#39;</span><span class="p">,</span> <span class="n">key_value_block</span><span class="p">)</span>
+        <span class="n">field_name</span> <span class="o">=</span> <span class="s1">&#39;unknown&#39;</span>
+        <span class="n">fields_builder</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">field_line</span> <span class="ow">in</span> <span class="n">field_lines</span><span class="p">:</span>
+            <span class="n">field_match</span> <span class="o">=</span> <span class="n">RE_FIELD_COMPONENTS</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">field_line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">field_match</span> <span class="ow">and</span> <span class="n">field_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;field&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">NAMED_FIELDS</span><span class="p">:</span>
+                <span class="n">field_name</span> <span class="o">=</span> <span class="n">field_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span>
+                    <span class="s1">&#39;field&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+                <span class="n">field_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;_no$&#39;</span><span class="p">,</span> <span class="s1">&#39;_num&#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+                <span class="n">fields_builder</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">field_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span>
+                    <span class="s1">&#39;value&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">field_name</span> <span class="o">!=</span> <span class="s1">&#39;unknown&#39;</span><span class="p">:</span>
+                <span class="c1"># we have a line with leading spaces</span>
+                <span class="n">fields_builder</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span> <span class="o">+=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^\s+&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">field_line</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fields_builder</span></div>
+
+
+<div class="viewcode-block" id="get_ancillary_files"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.get_ancillary_files">[docs]</a><span class="nd">@wraps</span><span class="p">(</span><span class="n">AbsMetaSession</span><span class="o">.</span><span class="n">get_ancillary_files</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_ancillary_files</span><span class="p">(</span><span class="n">docmeta</span><span class="p">:</span> <span class="n">DocMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Get list of ancillary file names and sizes.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">current_session</span><span class="p">()</span><span class="o">.</span><span class="n">get_ancillary_files</span><span class="p">(</span><span class="n">docmeta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_dissemination_formats"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.get_dissemination_formats">[docs]</a><span class="nd">@wraps</span><span class="p">(</span><span class="n">AbsMetaSession</span><span class="o">.</span><span class="n">get_dissemination_formats</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_dissemination_formats</span><span class="p">(</span><span class="n">docmeta</span><span class="p">:</span> <span class="n">DocMetadata</span><span class="p">,</span>
+                              <span class="n">format_pref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                              <span class="n">add_sciencewise</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Get list of dissemination formats.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">current_session</span><span class="p">()</span><span class="o">.</span><span class="n">get_dissemination_formats</span><span class="p">(</span><span class="n">docmeta</span><span class="p">,</span>
+                                                       <span class="n">format_pref</span><span class="p">,</span>
+                                                       <span class="n">add_sciencewise</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_next_id"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.get_next_id">[docs]</a><span class="nd">@wraps</span><span class="p">(</span><span class="n">AbsMetaSession</span><span class="o">.</span><span class="n">get_next_id</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_next_id</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Identifier</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Identifier</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve next arxiv document metadata by id.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">current_session</span><span class="p">()</span><span class="o">.</span><span class="n">get_next_id</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_previous_id"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.get_previous_id">[docs]</a><span class="nd">@wraps</span><span class="p">(</span><span class="n">AbsMetaSession</span><span class="o">.</span><span class="n">get_previous_id</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_previous_id</span><span class="p">(</span><span class="n">identifier</span><span class="p">:</span> <span class="n">Identifier</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Identifier</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve previous arxiv document metadata by id.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">current_session</span><span class="p">()</span><span class="o">.</span><span class="n">get_previous_id</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_abs"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.get_abs">[docs]</a><span class="nd">@wraps</span><span class="p">(</span><span class="n">AbsMetaSession</span><span class="o">.</span><span class="n">get_abs</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_abs</span><span class="p">(</span><span class="n">arxiv_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DocMetadata</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve arxiv document metadata by id.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">current_session</span><span class="p">()</span><span class="o">.</span><span class="n">get_abs</span><span class="p">(</span><span class="n">arxiv_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_session"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.get_session">[docs]</a><span class="k">def</span> <span class="nf">get_session</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsMetaSession</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Get a new session with the abstract metadata service.&quot;&quot;&quot;</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">get_application_config</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+    <span class="n">orignal_versions_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DOCUMENT_ORIGNAL_VERSIONS_PATH&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">latest_versions_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DOCUMENT_LATEST_VERSIONS_PATH&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">AbsMetaSession</span><span class="p">(</span><span class="n">latest_versions_path</span><span class="p">,</span> <span class="n">orignal_versions_path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="current_session"><a class="viewcode-back" href="../../../../api/browse.services.document.metadata.html#browse.services.document.metadata.current_session">[docs]</a><span class="k">def</span> <span class="nf">current_session</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AbsMetaSession</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Get/create :class:`.AbsMetaSession` for this context.&quot;&quot;&quot;</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">get_application_global</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">g</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_session</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s1">&#39;abs_meta&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">abs_meta</span> <span class="o">=</span> <span class="n">get_session</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">abs_meta</span><span class="p">,</span> <span class="n">AbsMetaSession</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">g</span><span class="o">.</span><span class="n">abs_meta</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

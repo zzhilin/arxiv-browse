@@ -1,0 +1,174 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.services.listing package &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-browse.services.listing">
+<span id="browse-services-listing-package"></span><h1>browse.services.listing package<a class="headerlink" href="#module-browse.services.listing" title="Permalink to this headline">¶</a></h1>
+<p>Serves lists of articles for categories and time periods.</p>
+<p>Currently (2018-10) getting everything for a listing from the DB is
+not possible. There is no table that correctly records the publish
+history in the legacy DB.</p>
+<p>The legacy listing files are used only for the IDs of the papers
+announced. The rest of the metadata is not kept updated. An example of
+this causing a problem is if an article published on 2018-01-01, then
+crossed on 2018-01-02, then replaced with a differnt title on
+2018-01-03. The cross on 2018-01-02 in the listing file will have the
+old title.</p>
+<p>Why month granularity? The legacy listing files have only month
+granularity for when a paper was announced. In the future there might
+be better date granularity for new papers.</p>
+<dl class="class">
+<dt id="browse.services.listing.ListingService">
+<em class="property">class </em><code class="descclassname">browse.services.listing.</code><code class="descname">ListingService</code><a class="reference internal" href="../_modules/browse/services/listing.html#ListingService"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.listing.ListingService" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for arXiv document listings.</p>
+<dl class="method">
+<dt id="browse.services.listing.ListingService.list_articles_by_month">
+<code class="descname">list_articles_by_month</code><span class="sig-paren">(</span><em>archiveOrCategory: str</em>, <em>year: int</em>, <em>month: int</em>, <em>skip: int</em>, <em>show: int</em>, <em>if_modified_since: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; browse.domain.listing.ListingResponse<a class="reference internal" href="../_modules/browse/services/listing.html#ListingService.list_articles_by_month"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.listing.ListingService.list_articles_by_month" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get listings for a month.</p>
+<p>if_modified_since is the if_modified_since header value passed by the web client
+It should be in RFC 1123 format.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="browse.services.listing.ListingService.list_articles_by_year">
+<code class="descname">list_articles_by_year</code><span class="sig-paren">(</span><em>archiveOrCategory: str</em>, <em>year: int</em>, <em>skip: int</em>, <em>show: int</em>, <em>if_modified_since: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; browse.domain.listing.ListingResponse<a class="reference internal" href="../_modules/browse/services/listing.html#ListingService.list_articles_by_year"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.listing.ListingService.list_articles_by_year" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get listing items for a whole year.</p>
+<p>if_modified_since is the if_modified_since header value passed by the web client
+It should be in RFC 1123 format.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="browse.services.listing.ListingService.list_new_articles">
+<code class="descname">list_new_articles</code><span class="sig-paren">(</span><em>archiveOrCategory: str</em>, <em>skip: int</em>, <em>show: int</em>, <em>if_modified_since: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; browse.domain.listing.NewResponse<a class="reference internal" href="../_modules/browse/services/listing.html#ListingService.list_new_articles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.listing.ListingService.list_new_articles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets listings for the most recent announcement/publish.</p>
+<p>if_modified_since is the if_modified_since header value passed by the web client
+It should be in RFC 1123 format.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="browse.services.listing.ListingService.list_pastweek_articles">
+<code class="descname">list_pastweek_articles</code><span class="sig-paren">(</span><em>archiveOrCategory: str</em>, <em>skip: int</em>, <em>show: int</em>, <em>if_modified_since: Optional[str] = None</em><span class="sig-paren">)</span> &#x2192; browse.domain.listing.ListingResponse<a class="reference internal" href="../_modules/browse/services/listing.html#ListingService.list_pastweek_articles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.listing.ListingService.list_pastweek_articles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets listings for the 5 most recent announcement/publish.</p>
+<p>if_modified_since is the if_modified_since header value passed by the web client
+It should be in RFC 1123 format.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="browse.services.listing.ListingService.version">
+<em class="property">classmethod </em><code class="descname">version</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="../_modules/browse/services/listing.html#ListingService.version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.listing.ListingService.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version.</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="browse.services.listing.fake_listings.html">browse.services.listing.fake_listings module</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/browse.services.listing.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

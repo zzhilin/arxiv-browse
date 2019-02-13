@@ -1,0 +1,371 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.domain.metadata &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for browse.domain.metadata</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Representations of arXiv document metadata.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Set</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="k">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+<span class="kn">from</span> <span class="nn">arxiv</span> <span class="k">import</span> <span class="n">taxonomy</span>
+<span class="kn">from</span> <span class="nn">arxiv.base.urls</span> <span class="k">import</span> <span class="n">canonical_url</span>
+<span class="kn">from</span> <span class="nn">browse.domain.identifier</span> <span class="k">import</span> <span class="n">Identifier</span>
+<span class="kn">from</span> <span class="nn">browse.domain.license</span> <span class="k">import</span> <span class="n">License</span>
+<span class="kn">from</span> <span class="nn">browse.domain.category</span> <span class="k">import</span> <span class="n">Category</span>
+
+
+<div class="viewcode-block" id="SourceType"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.SourceType">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">SourceType</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Represents arXiv article source file type.&quot;&quot;&quot;</span>
+
+    <span class="n">code</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="sd">&quot;&quot;&quot;Internal code for the source type.&quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Submitter"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.Submitter">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Submitter</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Represents the person who submitted an arXiv article.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="sd">&quot;&quot;&quot;Full name.&quot;&quot;&quot;</span>
+
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="sd">&quot;&quot;&quot;Email address.&quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;email&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="VersionEntry"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.VersionEntry">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VersionEntry</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Represents a single arXiv article version history entry.&quot;&quot;&quot;</span>
+
+    <span class="n">version</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="n">raw</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="sd">&quot;&quot;&quot;Raw history entry, e.g. as parsed from .abs file.&quot;&quot;&quot;</span>
+
+    <span class="n">submitted_date</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="sd">&quot;&quot;&quot;Date for the entry.&quot;&quot;&quot;</span>
+
+    <span class="n">size_kilobytes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="sd">&quot;&quot;&quot;Size of the article source, in kilobytes.&quot;&quot;&quot;</span>
+
+    <span class="n">source_type</span><span class="p">:</span> <span class="n">SourceType</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">SourceType</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+    <span class="sd">&quot;&quot;&quot;Source file type.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="AuthorList"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.AuthorList">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthorList</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Represents author names.&quot;&quot;&quot;</span>
+
+    <span class="n">raw</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="sd">&quot;&quot;&quot;Raw author field string.&quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;raw&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the string representation of AuthorList.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw</span></div>
+
+
+<div class="viewcode-block" id="Archive"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.Archive">[docs]</a><span class="k">class</span> <span class="nc">Archive</span><span class="p">(</span><span class="n">taxonomy</span><span class="o">.</span><span class="n">Archive</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents an arXiv archive--the middle level of the taxonomy.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Group"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.Group">[docs]</a><span class="k">class</span> <span class="nc">Group</span><span class="p">(</span><span class="n">taxonomy</span><span class="o">.</span><span class="n">Group</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents an arXiv group--the highest (most general) taxonomy level.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="DocMetadata"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.DocMetadata">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">DocMetadata</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing the core arXiv document metadata.&quot;&quot;&quot;</span>
+
+    <span class="n">raw_safe</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="sd">&quot;&quot;&quot;The raw abs string without submitter email address.&quot;&quot;&quot;</span>
+
+    <span class="n">arxiv_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="sd">&quot;&quot;&quot;arXiv paper identifier string without version affix, e.g. 1810.12345.&quot;&quot;&quot;</span>
+
+    <span class="n">arxiv_id_v</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="sd">&quot;&quot;&quot;arXiv paper identifier string with version affix, e.g. 1810.12345v2.&quot;&quot;&quot;</span>
+
+    <span class="n">arxiv_identifier</span><span class="p">:</span> <span class="n">Identifier</span>
+    <span class="sd">&quot;&quot;&quot;arXiv Identifier for this paper. Does not include version data.&quot;&quot;&quot;</span>
+
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">abstract</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="n">modified</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="sd">&quot;&quot;&quot;Datetime this version was modified.&quot;&quot;&quot;</span>
+
+    <span class="n">authors</span><span class="p">:</span> <span class="n">AuthorList</span>
+    <span class="sd">&quot;&quot;&quot;Article authors.&quot;&quot;&quot;</span>
+
+    <span class="n">submitter</span><span class="p">:</span> <span class="n">Submitter</span>
+    <span class="sd">&quot;&quot;&quot;Submitter of the article.&quot;&quot;&quot;</span>
+
+    <span class="n">categories</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="sd">&quot;&quot;&quot;Article classification (raw string).&quot;&quot;&quot;</span>
+
+    <span class="n">primary_category</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Category</span><span class="p">]</span>
+    <span class="sd">&quot;&quot;&quot;Primary category.&quot;&quot;&quot;</span>
+
+    <span class="n">primary_archive</span><span class="p">:</span> <span class="n">Archive</span>
+    <span class="n">primary_group</span><span class="p">:</span> <span class="n">Group</span>
+
+    <span class="n">secondary_categories</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Category</span><span class="p">]</span>
+    <span class="sd">&quot;&quot;&quot;Secondary categor(y|ies).&quot;&quot;&quot;</span>
+
+    <span class="n">journal_ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;Report number.&quot;&quot;&quot;</span>
+
+    <span class="n">report_num</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;Report number.&quot;&quot;&quot;</span>
+
+    <span class="n">doi</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;Digital Object Identifier (DOI).&quot;&quot;&quot;</span>
+
+    <span class="n">acm_class</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;Association for Computing Machinery (ACM) classification(s).&quot;&quot;&quot;</span>
+
+    <span class="n">msc_class</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;American Mathematical Society Mathematics Subject (MSC)</span>
+<span class="sd">       classification(s).&quot;&quot;&quot;</span>
+
+    <span class="n">proxy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;Proxy submitter.&quot;&quot;&quot;</span>
+
+    <span class="n">comments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;Submitter- and/or administrator-provided comments about the article.&quot;&quot;&quot;</span>
+
+    <span class="n">version</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="sd">&quot;&quot;&quot;Version of this article.&quot;&quot;&quot;</span>
+
+    <span class="n">license</span><span class="p">:</span> <span class="n">License</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">License</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;License associated with the article.&quot;&quot;&quot;</span>
+
+    <span class="n">version_history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">VersionEntry</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;Version history, consisting of at least one version history entry.&quot;&quot;&quot;</span>
+
+    <span class="n">is_definitive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">       Indicates whether this is the definitive DocMetadata for this article;</span>
+<span class="sd">       i.e. it includes metadata from the latest version of the article that is</span>
+<span class="sd">       needed for the abs page display.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">is_latest</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Indicates whether this DocMetadata is from the latest</span>
+<span class="sd">        version of this article.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">private</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;TODO: NOT IMPLEMENTED &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Description from arxiv classic: Flag set by init_from_file to</span>
+<span class="sd">    indicate that the abstract file exists authentication for</span>
+<span class="sd">    pre-publication access to papers should check for an undef return</span>
+<span class="sd">    from init_from_file and then check private to see if an</span>
+<span class="sd">    authentication redirect is required.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Post-initialization checks if is_definitive is True.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_definitive</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;categories must be defined&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_category</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;primary category must be defined&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DocMetadata.get_browse_context_list"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.DocMetadata.get_browse_context_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_browse_context_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get the list of archive/category IDs to generate browse context.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arxiv_identifier</span><span class="o">.</span><span class="n">is_old_id</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arxiv_identifier</span><span class="o">.</span><span class="n">archive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">arxiv_identifier</span><span class="o">.</span><span class="n">archive</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_category</span><span class="p">:</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">primary_category</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="n">taxonomy</span><span class="o">.</span><span class="n">CATEGORIES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_category</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s1">&#39;in_archive&#39;</span><span class="p">]:</span> <span class="kc">True</span>
+            <span class="p">}</span>
+        <span class="k">for</span> <span class="n">category</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_categories</span><span class="p">:</span>
+            <span class="n">options</span><span class="p">[</span><span class="n">category</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">in_archive</span> <span class="o">=</span> <span class="n">taxonomy</span><span class="o">.</span><span class="n">CATEGORIES</span><span class="p">[</span><span class="n">category</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s1">&#39;in_archive&#39;</span><span class="p">]</span>
+            <span class="n">options</span><span class="p">[</span><span class="n">in_archive</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="DocMetadata.highest_version"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.DocMetadata.highest_version">[docs]</a>    <span class="k">def</span> <span class="nf">highest_version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return highest version number from metadata.</span>
+
+<span class="sd">        This is determined by counting the entries in the {history}.</span>
+<span class="sd">        Return 1 if the metadata is private. Returns undef if this</span>
+<span class="sd">        object is not initialized.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">private</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version_history</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;version_history was not an Iterable for </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">arxiv_id_v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">ve</span><span class="p">:</span> <span class="n">ve</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">version_history</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DocMetadata.get_datetime_of_version"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.DocMetadata.get_datetime_of_version">[docs]</a>    <span class="k">def</span> <span class="nf">get_datetime_of_version</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Returns python datetime of version.</span>
+
+<span class="sd">        version: Version to get datetime of. Must be in range</span>
+<span class="sd">            1..highest_version. Uses highest_version if not specified.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">version</span><span class="p">:</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">highest_version</span><span class="p">()</span>
+
+        <span class="n">versions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">version_history</span> <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="n">version</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">versions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> version_history had more than one version </span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">arxiv_id</span><span class="p">,</span> <span class="n">version</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">versions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">versions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">submitted_date</span></div>
+
+<div class="viewcode-block" id="DocMetadata.get_secondaries"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.DocMetadata.get_secondaries">[docs]</a>    <span class="k">def</span> <span class="nf">get_secondaries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Category</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Unalias and deduplicate secondary categories.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_categories</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_category</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">unalias</span><span class="p">(</span><span class="n">secs</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Category</span><span class="p">])</span><span class="o">-&gt;</span><span class="n">Iterator</span><span class="p">[</span><span class="n">Category</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">Category</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">unalias</span><span class="p">()),</span> <span class="n">secs</span><span class="p">)</span>
+        <span class="n">prim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_category</span><span class="o">.</span><span class="n">unalias</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">de_prim</span><span class="p">(</span><span class="n">secs</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Category</span><span class="p">])</span><span class="o">-&gt;</span><span class="n">Iterator</span><span class="p">[</span><span class="n">Category</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">prim</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">secs</span><span class="p">)</span>
+
+        <span class="n">de_primaried</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">de_prim</span><span class="p">(</span><span class="n">unalias</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">secondary_categories</span><span class="p">))))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">de_primaried</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">de_primaried</span></div>
+
+<div class="viewcode-block" id="DocMetadata.display_secondaries"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.DocMetadata.display_secondaries">[docs]</a>    <span class="k">def</span> <span class="nf">display_secondaries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Unalias, dedup and sort secondaries for display.&quot;&quot;&quot;</span>
+        <span class="n">de_primaried</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_secondaries</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">to_display</span><span class="p">(</span><span class="n">secs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Category</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">display</span><span class="p">),</span> <span class="n">secs</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">to_display</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">de_primaried</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DocMetadata.canonical_url"><a class="viewcode-back" href="../../../api/browse.domain.metadata.html#browse.domain.metadata.DocMetadata.canonical_url">[docs]</a>    <span class="k">def</span> <span class="nf">canonical_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">no_version</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return canonical URL for this ID and version.&quot;&quot;&quot;</span>
+        <span class="n">url</span><span class="p">:</span> <span class="nb">str</span>
+        <span class="k">if</span> <span class="n">no_version</span><span class="p">:</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">canonical_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arxiv_identifier</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">canonical_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arxiv_identifier</span><span class="o">.</span><span class="n">idv</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">url</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

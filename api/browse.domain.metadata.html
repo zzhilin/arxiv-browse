@@ -1,0 +1,391 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.domain.metadata module &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-browse.domain.metadata">
+<span id="browse-domain-metadata-module"></span><h1>browse.domain.metadata module<a class="headerlink" href="#module-browse.domain.metadata" title="Permalink to this headline">¶</a></h1>
+<p>Representations of arXiv document metadata.</p>
+<dl class="class">
+<dt id="browse.domain.metadata.Archive">
+<em class="property">class </em><code class="descclassname">browse.domain.metadata.</code><code class="descname">Archive</code><a class="reference internal" href="../_modules/browse/domain/metadata.html#Archive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.Archive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">arxiv.taxonomy.category.Archive</span></code></p>
+<p>Represents an arXiv archive–the middle level of the taxonomy.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.domain.metadata.AuthorList">
+<em class="property">class </em><code class="descclassname">browse.domain.metadata.</code><code class="descname">AuthorList</code><span class="sig-paren">(</span><em>raw: str</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/domain/metadata.html#AuthorList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.AuthorList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Represents author names.</p>
+<dl class="attribute">
+<dt id="browse.domain.metadata.AuthorList.raw">
+<code class="descname">raw</code><a class="headerlink" href="#browse.domain.metadata.AuthorList.raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raw author field string.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.domain.metadata.DocMetadata">
+<em class="property">class </em><code class="descclassname">browse.domain.metadata.</code><code class="descname">DocMetadata</code><span class="sig-paren">(</span><em>raw_safe: str, arxiv_id: str, arxiv_id_v: str, arxiv_identifier: browse.domain.identifier.Identifier, title: str, abstract: str, modified: datetime.datetime, authors: browse.domain.metadata.AuthorList, submitter: browse.domain.metadata.Submitter, categories: Optional[str], primary_category: Optional[browse.domain.category.Category], primary_archive: browse.domain.metadata.Archive, primary_group: browse.domain.metadata.Group, secondary_categories: List[browse.domain.category.Category], journal_ref: Optional[str] = None, report_num: Optional[str] = None, doi: Optional[str] = None, acm_class: Optional[str] = None, msc_class: Optional[str] = None, proxy: Optional[str] = None, comments: Optional[str] = None, version: int = 1, license: browse.domain.license.License = &lt;factory&gt;, version_history: List[browse.domain.metadata.VersionEntry] = &lt;factory&gt;, is_definitive: bool = False, is_latest: bool = False, private: bool = False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/domain/metadata.html#DocMetadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.DocMetadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for representing the core arXiv document metadata.</p>
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.acm_class">
+<code class="descname">acm_class</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.acm_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Association for Computing Machinery (ACM) classification(s).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.arxiv_id">
+<code class="descname">arxiv_id</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.arxiv_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>arXiv paper identifier string without version affix, e.g. 1810.12345.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.arxiv_id_v">
+<code class="descname">arxiv_id_v</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.arxiv_id_v" title="Permalink to this definition">¶</a></dt>
+<dd><p>arXiv paper identifier string with version affix, e.g. 1810.12345v2.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.arxiv_identifier">
+<code class="descname">arxiv_identifier</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.arxiv_identifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>arXiv Identifier for this paper. Does not include version data.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.authors">
+<code class="descname">authors</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.authors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Article authors.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="browse.domain.metadata.DocMetadata.canonical_url">
+<code class="descname">canonical_url</code><span class="sig-paren">(</span><em>no_version: bool = False</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="../_modules/browse/domain/metadata.html#DocMetadata.canonical_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.DocMetadata.canonical_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return canonical URL for this ID and version.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.categories">
+<code class="descname">categories</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.categories" title="Permalink to this definition">¶</a></dt>
+<dd><p>Article classification (raw string).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.comments">
+<code class="descname">comments</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.comments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submitter- and/or administrator-provided comments about the article.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="browse.domain.metadata.DocMetadata.display_secondaries">
+<code class="descname">display_secondaries</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; List[str]<a class="reference internal" href="../_modules/browse/domain/metadata.html#DocMetadata.display_secondaries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.DocMetadata.display_secondaries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unalias, dedup and sort secondaries for display.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.doi">
+<code class="descname">doi</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.doi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Digital Object Identifier (DOI).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="browse.domain.metadata.DocMetadata.get_browse_context_list">
+<code class="descname">get_browse_context_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; List[str]<a class="reference internal" href="../_modules/browse/domain/metadata.html#DocMetadata.get_browse_context_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.DocMetadata.get_browse_context_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the list of archive/category IDs to generate browse context.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="browse.domain.metadata.DocMetadata.get_datetime_of_version">
+<code class="descname">get_datetime_of_version</code><span class="sig-paren">(</span><em>version: Optional[int]</em><span class="sig-paren">)</span> &#x2192; Optional[datetime.datetime]<a class="reference internal" href="../_modules/browse/domain/metadata.html#DocMetadata.get_datetime_of_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.DocMetadata.get_datetime_of_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns python datetime of version.</p>
+<dl class="docutils">
+<dt>version: Version to get datetime of. Must be in range</dt>
+<dd>1..highest_version. Uses highest_version if not specified.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="browse.domain.metadata.DocMetadata.get_secondaries">
+<code class="descname">get_secondaries</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Set[browse.domain.category.Category]<a class="reference internal" href="../_modules/browse/domain/metadata.html#DocMetadata.get_secondaries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.DocMetadata.get_secondaries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unalias and deduplicate secondary categories.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="browse.domain.metadata.DocMetadata.highest_version">
+<code class="descname">highest_version</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="../_modules/browse/domain/metadata.html#DocMetadata.highest_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.DocMetadata.highest_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return highest version number from metadata.</p>
+<p>This is determined by counting the entries in the {history}.
+Return 1 if the metadata is private. Returns undef if this
+object is not initialized.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.is_definitive">
+<code class="descname">is_definitive</code><em class="property"> = False</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.is_definitive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates whether this is the definitive DocMetadata for this article;
+i.e. it includes metadata from the latest version of the article that is
+needed for the abs page display.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.is_latest">
+<code class="descname">is_latest</code><em class="property"> = False</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.is_latest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates whether this DocMetadata is from the latest
+version of this article.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.journal_ref">
+<code class="descname">journal_ref</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.journal_ref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Report number.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.license">
+<code class="descname">license</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.license" title="Permalink to this definition">¶</a></dt>
+<dd><p>License associated with the article.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.modified">
+<code class="descname">modified</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.modified" title="Permalink to this definition">¶</a></dt>
+<dd><p>Datetime this version was modified.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.msc_class">
+<code class="descname">msc_class</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.msc_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>American Mathematical Society Mathematics Subject (MSC)
+classification(s).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.primary_category">
+<code class="descname">primary_category</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.primary_category" title="Permalink to this definition">¶</a></dt>
+<dd><p>Primary category.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.private">
+<code class="descname">private</code><em class="property"> = False</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.private" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: NOT IMPLEMENTED</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.proxy">
+<code class="descname">proxy</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.proxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy submitter.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.raw_safe">
+<code class="descname">raw_safe</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.raw_safe" title="Permalink to this definition">¶</a></dt>
+<dd><p>The raw abs string without submitter email address.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.report_num">
+<code class="descname">report_num</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.report_num" title="Permalink to this definition">¶</a></dt>
+<dd><p>Report number.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.secondary_categories">
+<code class="descname">secondary_categories</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.secondary_categories" title="Permalink to this definition">¶</a></dt>
+<dd><p>Secondary categor(y|ies).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.submitter">
+<code class="descname">submitter</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.submitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submitter of the article.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.version">
+<code class="descname">version</code><em class="property"> = 1</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of this article.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.DocMetadata.version_history">
+<code class="descname">version_history</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.DocMetadata.version_history" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version history, consisting of at least one version history entry.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.domain.metadata.Group">
+<em class="property">class </em><code class="descclassname">browse.domain.metadata.</code><code class="descname">Group</code><a class="reference internal" href="../_modules/browse/domain/metadata.html#Group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.Group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">arxiv.taxonomy.category.Group</span></code></p>
+<p>Represents an arXiv group–the highest (most general) taxonomy level.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.domain.metadata.SourceType">
+<em class="property">class </em><code class="descclassname">browse.domain.metadata.</code><code class="descname">SourceType</code><span class="sig-paren">(</span><em>code: str</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/domain/metadata.html#SourceType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.SourceType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Represents arXiv article source file type.</p>
+<dl class="attribute">
+<dt id="browse.domain.metadata.SourceType.code">
+<code class="descname">code</code><a class="headerlink" href="#browse.domain.metadata.SourceType.code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Internal code for the source type.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.domain.metadata.Submitter">
+<em class="property">class </em><code class="descclassname">browse.domain.metadata.</code><code class="descname">Submitter</code><span class="sig-paren">(</span><em>name: str</em>, <em>email: str</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/domain/metadata.html#Submitter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.Submitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Represents the person who submitted an arXiv article.</p>
+<dl class="attribute">
+<dt id="browse.domain.metadata.Submitter.email">
+<code class="descname">email</code><a class="headerlink" href="#browse.domain.metadata.Submitter.email" title="Permalink to this definition">¶</a></dt>
+<dd><p>Email address.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.Submitter.name">
+<code class="descname">name</code><a class="headerlink" href="#browse.domain.metadata.Submitter.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full name.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="browse.domain.metadata.VersionEntry">
+<em class="property">class </em><code class="descclassname">browse.domain.metadata.</code><code class="descname">VersionEntry</code><span class="sig-paren">(</span><em>version: int</em>, <em>raw: str</em>, <em>submitted_date: datetime.datetime</em>, <em>size_kilobytes: int = 0</em>, <em>source_type: browse.domain.metadata.SourceType = &lt;factory&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/browse/domain/metadata.html#VersionEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.domain.metadata.VersionEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Represents a single arXiv article version history entry.</p>
+<dl class="attribute">
+<dt id="browse.domain.metadata.VersionEntry.raw">
+<code class="descname">raw</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.VersionEntry.raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raw history entry, e.g. as parsed from .abs file.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.VersionEntry.size_kilobytes">
+<code class="descname">size_kilobytes</code><em class="property"> = 0</em><a class="headerlink" href="#browse.domain.metadata.VersionEntry.size_kilobytes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Size of the article source, in kilobytes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.VersionEntry.source_type">
+<code class="descname">source_type</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.VersionEntry.source_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Source file type.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="browse.domain.metadata.VersionEntry.submitted_date">
+<code class="descname">submitted_date</code><em class="property"> = None</em><a class="headerlink" href="#browse.domain.metadata.VersionEntry.submitted_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Date for the entry.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/browse.domain.metadata.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

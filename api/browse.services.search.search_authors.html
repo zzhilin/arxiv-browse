@@ -1,0 +1,170 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>browse.services.search.search_authors module &#8212; arXiv Browse Service 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-browse.services.search.search_authors">
+<span id="browse-services-search-search-authors-module"></span><h1>browse.services.search.search_authors module<a class="headerlink" href="#module-browse.services.search.search_authors" title="Permalink to this headline">¶</a></h1>
+<p>Produces search service query strings for authors.</p>
+<dl class="attribute">
+<dt id="browse.services.search.search_authors.AuthorList">
+<code class="descclassname">browse.services.search.search_authors.</code><code class="descname">AuthorList</code><a class="headerlink" href="#browse.services.search.search_authors.AuthorList" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">typing.List</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.search.search_authors.is_affiliation">
+<code class="descclassname">browse.services.search.search_authors.</code><code class="descname">is_affiliation</code><span class="sig-paren">(</span><em>item: str</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="../_modules/browse/services/search/search_authors.html#is_affiliation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.search.search_authors.is_affiliation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if a string contains an affiliation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.search.search_authors.is_divider">
+<code class="descclassname">browse.services.search.search_authors.</code><code class="descname">is_divider</code><span class="sig-paren">(</span><em>item: str</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="../_modules/browse/services/search/search_authors.html#is_divider"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.search.search_authors.is_divider" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if the string contains a divider character.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.search.search_authors.is_etal">
+<code class="descclassname">browse.services.search.search_authors.</code><code class="descname">is_etal</code><span class="sig-paren">(</span><em>item: str</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="../_modules/browse/services/search/search_authors.html#is_etal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.search.search_authors.is_etal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if the string contains et al.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.search.search_authors.is_short">
+<code class="descclassname">browse.services.search.search_authors.</code><code class="descname">is_short</code><span class="sig-paren">(</span><em>item: str</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="../_modules/browse/services/search/search_authors.html#is_short"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.search.search_authors.is_short" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return true if the length of string is less than 4 characters long.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.search.search_authors.queries_for_authors">
+<code class="descclassname">browse.services.search.search_authors.</code><code class="descname">queries_for_authors</code><span class="sig-paren">(</span><em>authors: str</em><span class="sig-paren">)</span> &#x2192; List[Union[str, Tuple[str, str]]]<a class="reference internal" href="../_modules/browse/services/search/search_authors.html#queries_for_authors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.search.search_authors.queries_for_authors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make search service query strings for authors.</p>
+<p>The main challenge here is that the HTML output of this should match as
+closely as possible the string input by the submitter.</p>
+<p>Takes the authors string from a document metadata or .abs, split,
+and return a structure of [ str|(name_text, author_search_query_str)…]</p>
+<p>If the item in the list is just a string, it should just be placed in the
+HTML output since it is something like whitespace, a comma or ‘for the’ or
+a colon.</p>
+<p>If a list item is a tuple, author_search_query_str will be something like
+“Webb J E” which can be used to query the search service.</p>
+<p>name_text will be the text to put in side the &lt;a&gt; tag. Such as
+“James E. Webb,”</p>
+<p>DON’T URL_encode, do that in template
+DON’T do entities, do that in template
+DON’T escape utf8 for HTML, just return utf8</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="browse.services.search.search_authors.split_long_author_list">
+<code class="descclassname">browse.services.search.search_authors.</code><code class="descname">split_long_author_list</code><span class="sig-paren">(</span><em>authors: List[Union[str, Tuple[str, str]]], size: int</em><span class="sig-paren">)</span> &#x2192; Tuple[List[Union[str, Tuple[str, str]]], List[Union[str, Tuple[str, str]]], int]<a class="reference internal" href="../_modules/browse/services/search/search_authors.html#split_long_author_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#browse.services.search.search_authors.split_long_author_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns two lists, first is of size, second is the remaining authors.</p>
+<p>The author list has strings which are not part of the author
+names, but commas between them to preserve the formatting that the
+submitter used.</p>
+<p>This function is used to split the list base on name count, not
+just list element count.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arXiv Browse Service</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Browse Application Architecture</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, arXiv-NG Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/browse.services.search.search_authors.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
