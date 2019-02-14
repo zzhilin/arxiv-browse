@@ -48,27 +48,27 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="is_affiliation"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.is_affiliation">[docs]</a><span class="k">def</span> <span class="nf">is_affiliation</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="is_affiliation"><a class="viewcode-back" href="../../../../api/browse.services.util.email.html#browse.services.search.search_authors.is_affiliation">[docs]</a><span class="k">def</span> <span class="nf">is_affiliation</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Return true if a string contains an affiliation.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;(&#39;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="is_short"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.is_short">[docs]</a><span class="k">def</span> <span class="nf">is_short</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="is_short"><a class="viewcode-back" href="../../../../api/browse.services.util.email.html#browse.services.search.search_authors.is_short">[docs]</a><span class="k">def</span> <span class="nf">is_short</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Return true if the length of string is less than 4 characters long.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span></div>
 
 
-<div class="viewcode-block" id="is_etal"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.is_etal">[docs]</a><span class="k">def</span> <span class="nf">is_etal</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="is_etal"><a class="viewcode-back" href="../../../../api/browse.services.util.email.html#browse.services.search.search_authors.is_etal">[docs]</a><span class="k">def</span> <span class="nf">is_etal</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Return true if the string contains et al.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;et\.? al\.?$&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="is_divider"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.is_divider">[docs]</a><span class="k">def</span> <span class="nf">is_divider</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="is_divider"><a class="viewcode-back" href="../../../../api/browse.services.util.email.html#browse.services.search.search_authors.is_divider">[docs]</a><span class="k">def</span> <span class="nf">is_divider</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Return true if the string contains a divider character.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^(,|:)&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="split_long_author_list"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.split_long_author_list">[docs]</a><span class="k">def</span> <span class="nf">split_long_author_list</span><span class="p">(</span>
+<div class="viewcode-block" id="split_long_author_list"><a class="viewcode-back" href="../../../../api/browse.services.util.email.html#browse.services.search.search_authors.split_long_author_list">[docs]</a><span class="k">def</span> <span class="nf">split_long_author_list</span><span class="p">(</span>
         <span class="n">authors</span><span class="p">:</span> <span class="n">AuthorList</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AuthorList</span><span class="p">,</span> <span class="n">AuthorList</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;Returns two lists, first is of size, second is the remaining authors.</span>
 
@@ -95,7 +95,7 @@
     <span class="k">return</span> <span class="n">front</span><span class="p">,</span> <span class="n">back</span><span class="p">,</span> <span class="n">back_count</span></div>
 
 
-<div class="viewcode-block" id="queries_for_authors"><a class="viewcode-back" href="../../../../api/browse.services.search.search_authors.html#browse.services.search.search_authors.queries_for_authors">[docs]</a><span class="k">def</span> <span class="nf">queries_for_authors</span><span class="p">(</span><span class="n">authors</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthorList</span><span class="p">:</span>
+<div class="viewcode-block" id="queries_for_authors"><a class="viewcode-back" href="../../../../api/browse.services.util.email.html#browse.services.search.search_authors.queries_for_authors">[docs]</a><span class="k">def</span> <span class="nf">queries_for_authors</span><span class="p">(</span><span class="n">authors</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthorList</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Make search service query strings for authors.</span>
 
 <span class="sd">    The main challenge here is that the HTML output of this should match as</span>

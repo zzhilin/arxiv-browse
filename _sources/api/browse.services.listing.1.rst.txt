@@ -1,7 +1,7 @@
-browse.services.search package
+browse.services.listing package
 ================================
 
-.. automodule:: browse.services.search
+.. automodule:: browse.services.listing
     :members:
     :undoc-members:
     :show-inheritance:
@@ -11,4 +11,4 @@ Subpackages
 
 .. toctree::
 
-    browse.services.search.search_authors
+    browse.services.listing.fake_listings
