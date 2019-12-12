@@ -13,10 +13,16 @@ body {
   font-family: 'Lucida Grande', helvetica, arial, verdana, sans-serif;
 }
 
-a:link, a:visited, a:active {
+a:link, a:active {
   text-decoration: none;
   /*font-weight: bold;*/
   font-weight: normal;
+  color:#3838FF;
+}
+a:visited {
+  text-decoration: none;
+  font-weight: normal;
+  color: #8028D2;
 }
 
 a:hover {
@@ -440,7 +446,7 @@ footer ul {
   font-size: 90%;
 }
 #content-inner {
-  
+
 }
 
 /* Index page tagline */
