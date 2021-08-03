@@ -3,6 +3,7 @@
 The primary entrypoint to this module is :func:`.get_abs_page`, which
 handles GET requests to the abs endpoint.
 """
+# pylint: disable=raise-missing-from
 
 import re
 from typing import Any, Dict, List, Optional, Tuple
@@ -17,26 +18,32 @@ from werkzeug.exceptions import InternalServerError
 
 from arxiv import status, taxonomy
 from arxiv.base import logging
+
 from browse.controllers import check_supplied_identifier
+from browse.controllers.response_headers import abs_expires_header, \
+    mime_header_date
+
 from browse.domain.metadata import DocMetadata
 from browse.domain.category import Category
-from browse.exceptions import AbsNotFound
-from browse.services.search.search_authors import queries_for_authors, \
-    split_long_author_list
-from browse.services.util.metatags import meta_tag_metadata
-from browse.services.util.response_headers import abs_expires_header, \
-    mime_header_date
-from browse.services.document import metadata
-from browse.services.document.metadata import AbsException,\
-    AbsNotFoundException, AbsVersionNotFoundException, AbsDeletedException
 from browse.domain.identifier import Identifier, IdentifierException,\
     IdentifierIsArchiveException
+from browse.exceptions import AbsNotFound
+
+from browse.formatting.search_authors import queries_for_authors, \
+    split_long_author_list
+from browse.formatting.metatags import meta_tag_metadata
+from browse.formatting.external_refs_cits import include_inspire_link,\
+    include_dblp_section, get_computed_dblp_listing_path, get_dblp_bibtex_path
+
+from browse.services.documents import get_doc_service
+from browse.services.documents.base_documents import AbsException,\
+    AbsNotFoundException, AbsVersionNotFoundException, AbsDeletedException
+from browse.services.prevnext import prevnext_service
+
 from browse.services.database import count_trackback_pings,\
     get_trackback_ping_latest_date, has_sciencewise_ping, \
     get_dblp_listing_path, get_dblp_authors
-from browse.services.util.external_refs_cits import include_inspire_link,\
-    include_dblp_section, get_computed_dblp_listing_path, get_dblp_bibtex_path
-from browse.services.document.config.external_refs_cits import DBLP_BASE_URL,\
+from browse.services.documents.config.external_refs_cits import DBLP_BASE_URL,\
     DBLP_BIBTEX_PATH, DBLP_AUTHOR_SEARCH_PATH
 
 logger = logging.getLogger(__name__)
@@ -72,6 +79,7 @@ def get_abs_page(arxiv_id: str) -> Response:
     """
     response_data: Dict[str, Any] = {}
     response_headers: Dict[str, Any] = {}
+
     try:
         arxiv_id = _check_legacy_id_params(arxiv_id)
         arxiv_identifier = Identifier(arxiv_id=arxiv_id)
@@ -81,7 +89,7 @@ def get_abs_page(arxiv_id: str) -> Response:
         if redirect:
             return redirect
 
-        abs_meta = metadata.get_abs(arxiv_id)
+        abs_meta = get_doc_service().get_abs(arxiv_id)
         not_modified = _check_request_headers(
             abs_meta, response_data, response_headers)
         if not_modified:
@@ -103,7 +111,7 @@ def get_abs_page(arxiv_id: str) -> Response:
         # Dissemination formats for download links
         download_format_pref = request.cookies.get('xxx-ps-defaults')
         add_sciencewise_ping = _check_sciencewise_ping(abs_meta.arxiv_id_v)
-        response_data['formats'] = metadata.get_dissemination_formats(
+        response_data['formats'] = get_doc_service().get_dissemination_formats(
             abs_meta,
             download_format_pref,
             add_sciencewise_ping)
@@ -164,7 +172,7 @@ def _non_critical_abs_data(abs_meta: DocMetadata,
 
     # Ancillary files
     response_data['ancillary_files'] = \
-        metadata.get_ancillary_files(abs_meta)
+        get_doc_service().get_ancillary_files(abs_meta)
 
     # Browse context
     _check_context(arxiv_identifier,
@@ -189,11 +197,11 @@ def _check_request_headers(docmeta: DocMetadata,
 
     last_mod_mime = mime_header_date(last_mod_dt)
     etag = f'"{last_mod_mime}"'
-    
+
     resp_headers['Last-Modified'] = last_mod_mime
     resp_headers['ETag'] = etag
     resp_headers['Expires'] = abs_expires_header()[1]
-    
+
     not_modified = _not_modified(last_mod_dt,
                                  _time_header_parse('If-Modified-Since'),
                                  _get_req_header('if-none-match'),
@@ -229,7 +237,8 @@ def _time_header_parse(header: str) -> Optional[datetime]:
 def _get_req_header(header: str) -> Optional[str]:
     """Gets request header, needs to be case insensative for keys.
 
-    HTTP header keys are case insensative. RFC 2616"""
+    HTTP header keys are case insensitive. RFC 2616
+    """
     return next((value for key, value in request.headers.items()
                  if key.lower() == header.lower()), None)
 
@@ -297,20 +306,17 @@ def _check_context(arxiv_identifier: Identifier,
 
     next_url = None
     prev_url = None
-    if arxiv_identifier.is_old_id or context == 'arxiv':
-        # Revert to hybrid approach per ARXIVNG-2080
-        next_id = metadata.get_next_id(arxiv_identifier)
-        if next_id:
+    pnres=prevnext_service().prevnext(arxiv_identifier, context)
+    if not pnres.usecontroller:
+        if pnres.next_id:
             next_url = url_for('browse.abstract',
-                               arxiv_id=next_id.id,
+                               arxiv_id=pnres.next_id.id,
                                context='arxiv' if context == 'arxiv' else None)
-        previous_id = metadata.get_previous_id(arxiv_identifier)
-        if previous_id:
+        if pnres.previous_id:
             prev_url = url_for('browse.abstract',
-                               arxiv_id=previous_id.id,
+                               arxiv_id=pnres.previous_id.id,
                                context='arxiv' if context == 'arxiv' else None)
     else:
-        # Use prevnext controller to determine what the previous or next ID is.
         next_url = url_for('browse.previous_next',
                            id=arxiv_identifier.id,
                            function='next',

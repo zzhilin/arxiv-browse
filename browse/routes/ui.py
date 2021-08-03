@@ -45,7 +45,7 @@ def inject_now() -> Dict:
 
 @blueprint.before_request
 def before_request() -> None:
-    """ Get geo data and institutional affiliation from ip address. """
+    """Get geo data and institutional affiliation from ip address."""
     global geoip_reader
     try:
         if geoip_reader:
@@ -63,7 +63,9 @@ def before_request() -> None:
                         }
                     if response.country and response.country.iso_code:
                         session['country'] = response.country.iso_code
-                    if response.subdivisions and response.subdivisions.most_specific and response.subdivisions.most_specific.iso_code:
+                    if (response.subdivisions
+                        and response.subdivisions.most_specific
+                        and response.subdivisions.most_specific.iso_code):
                         session['subnational'] = response.subdivisions.most_specific.iso_code
                     if response.city and response.city.name:
                         session['city'] = response.city.name
@@ -229,7 +231,7 @@ def trackback(arxiv_id: str) -> Union[str, Response]:
 def clickthrough() -> Response:
     """Generate redirect for clickthrough links."""
     if 'url' in request.args and 'v' in request.args:
-        if is_hash_valid(current_app.config['CLICKTHROUGH_SECRET'],
+        if is_hash_valid(current_app.settings.CLICKTHROUGH_SECRET.get_secret_value(),
                          request.args.get('url'),
                          request.args.get('v')):
             return redirect(request.args.get('url'))  # type: ignore
@@ -387,7 +389,7 @@ def form(arxiv_id: str) -> Response:
     raise InternalServerError(f'Not yet implemented {arxiv_id}')
 
 
-@blueprint.route('archive/', defaults={'archive': None})
+@blueprint.route('archive', defaults={'archive': None})
 @blueprint.route('archive/<archive>', strict_slashes=False)
 def archive(archive: str):  # type: ignore
     """Landing page for an archive."""

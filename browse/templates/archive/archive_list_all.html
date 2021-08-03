@@ -1,13 +1,12 @@
-{%- extends "base.html" -%}
+{%- extends "base/base.html" %}
 
-{% block title %}Archives{% endblock %}
+{% set pagetitle %}All Archives{% endset %}
 
-{% block header_h1 %}
-<h1><a href="/">{{ config['BROWSE_SITE_LABEL'] }}</a> > archives</h1>
-{% endblock %}
-
+{% block addl_head %}
+{% endblock addl_head %}
 
 {%- block content %}
+  <h1><a href="/">{{ config['BROWSE_SITE_LABEL'] }}</a> > archives</h1>
   <h1>Archives</h1>
 
   {% if bad_archive is not none %}

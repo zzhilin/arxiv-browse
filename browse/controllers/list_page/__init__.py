@@ -42,18 +42,19 @@ import calendar
 import logging
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
+from datetime import datetime
 
 from arxiv import status, taxonomy
-from flask import current_app, request, url_for
-from werkzeug.exceptions import ServiceUnavailable, BadRequest
+from flask import request, url_for
+from werkzeug.exceptions import BadRequest
 
 from browse.controllers.abs_page import truncate_author_list_size
 from browse.controllers.list_page.paging import paging
 from browse.domain.metadata import DocMetadata
-from browse.services.document import metadata
-from browse.services.listing import ListingService, get_listing_service
-from browse.domain.listing import NewResponse, NotModifiedResponse, ListingResponse
-from browse.services.search.search_authors import queries_for_authors, \
+from browse.services.documents import get_doc_service
+from browse.services.listing import get_listing_service
+from browse.services.listing.base_listing import  NewResponse, NotModifiedResponse, ListingResponse
+from browse.formatting.search_authors import queries_for_authors, \
     split_long_author_list, AuthorList
 
 
@@ -130,8 +131,6 @@ def get_listing(subject_or_category: str,
         raise BadRequest
 
     listing_service = get_listing_service()
-    if not listing_service:
-        raise ServiceUnavailable
 
     if not skip or not skip.isdigit():
         skipn = 0
@@ -202,24 +201,22 @@ def get_listing(subject_or_category: str,
             list_type = 'month'
             response_data['list_month'] = str(list_month)
             response_data['list_month_name'] = calendar.month_abbr[list_month]
-            month_reps = listing_service.list_articles_by_month(
+            resp = listing_service.list_articles_by_month(
                 subject_or_category, list_year, list_month, skipn, shown, if_mod_since)
-            response_headers.update(_expires_headers(month_reps))
-            if _not_modified(month_reps):
-                return {}, status.HTTP_304_NOT_MODIFIED, response_headers
-            listings = month_reps['listings']
-            count = month_reps['count']
-            response_data['pubmonth'] = month_reps['pubdates'][0][0]
         else:
             list_type = 'year'
-            year_resp = listing_service.list_articles_by_year(
+            resp = listing_service.list_articles_by_year(
                 subject_or_category, list_year, skipn, shown, if_mod_since)
-            response_headers.update(_expires_headers(year_resp))
-            if _not_modified(year_resp):
-                return {}, status.HTTP_304_NOT_MODIFIED, response_headers
-            listings = year_resp['listings']
-            count = year_resp['count']
-            response_data['pubmonth'] = year_resp['pubdates'][0][0]
+
+        response_headers.update(_expires_headers(resp))
+        if _not_modified(resp):
+            return {}, status.HTTP_304_NOT_MODIFIED, response_headers
+        listings = resp['listings']
+        count = resp['count']
+        if resp['pubdates'] and resp['pubdates'][0]:
+            response_data['pubmonth'] = resp['pubdates'][0][0]
+        else:
+            response_data['pubmonth'] = datetime.now() # This is just to make the template happy
 
     # TODO if it is a HEAD, and nothing has changed, send not modified
 
@@ -227,7 +224,7 @@ def get_listing(subject_or_category: str,
 
     for item in listings:
         idx = idx + 1
-        item['article'] = metadata.get_abs(item['id'])  # type: ignore
+        item['article'] = get_doc_service().get_abs(item['id'])  # type: ignore
         item['list_index'] = idx + skipn  # type: ignore
 
     response_data['listings'] = listings
@@ -311,7 +308,7 @@ def more_fewer(show: int, count: int, viewing_all: bool) -> Dict[str, Any]:
 def dl_for_articles(items: List[Any])->Dict[str, Any]:
     """Gets the download links for an article."""
     dl_pref = request.cookies.get('xxx-ps-defaults')
-    return {item['article'].arxiv_id_v: metadata.get_dissemination_formats(item['article'], dl_pref)
+    return {item['article'].arxiv_id_v: get_doc_service().get_dissemination_formats(item['article'], dl_pref)
             for item in items}
 
 
@@ -322,7 +319,7 @@ def authors_for_articles(listings: List[Any])->Dict[str, Any]:
 
 def author_links(abs_meta: DocMetadata) -> Tuple[AuthorList, AuthorList, int]:
     """Creates author list links in a very similar way to abs page."""
-    return split_long_author_list(queries_for_authors(abs_meta.authors.raw),
+    return split_long_author_list(queries_for_authors(abs_meta.authors.raw),  # type: ignore
                                   truncate_author_list_size)
 
 

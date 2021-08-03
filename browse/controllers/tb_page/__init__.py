@@ -1,4 +1,5 @@
 """Handle requests to display the trackbacks for arXiv articles."""
+# pylint: disable=raise-missing-from
 
 import re
 from typing import Any, Dict, List, Tuple
@@ -14,10 +15,10 @@ from browse.services.database import get_paper_trackback_pings, \
                                      get_trackback_ping
 from browse.controllers import check_supplied_identifier
 from browse.domain.identifier import Identifier, IdentifierException
-from browse.services.document import metadata
-from browse.services.document.metadata import AbsException, \
+from browse.services.documents import get_doc_service
+from browse.services.documents.base_documents import AbsException, \
     AbsNotFoundException
-from browse.services.search.search_authors import queries_for_authors, \
+from browse.formatting.search_authors import queries_for_authors, \
     split_long_author_list
 
 app_config = get_application_config()
@@ -64,7 +65,7 @@ def get_tb_page(arxiv_id: str) -> Response:
         if redirect:
             return redirect
         response_data['arxiv_identifier'] = arxiv_identifier
-        abs_meta = metadata.get_abs(arxiv_identifier.id)
+        abs_meta = get_doc_service().get_abs(arxiv_identifier.id)
         if abs_meta:
             response_data['abs_meta'] = abs_meta
         trackback_pings = get_paper_trackback_pings(arxiv_identifier.id)
@@ -80,7 +81,6 @@ def get_tb_page(arxiv_id: str) -> Response:
     except (AbsException, IdentifierException):
         raise TrackbackNotFound(data={'arxiv_id': arxiv_id})
     except Exception as ex:
-        logger.warning(f'Error getting trackbacks: {ex}')
         raise InternalServerError from ex
 
     return response_data, response_status, response_headers
@@ -133,7 +133,6 @@ def get_recent_tb_page(request_params: MultiDict) -> Response:
     except ValueError:
         raise BadRequest
     except Exception as ex:
-        logger.warning(f'Error getting recent trackbacks: {ex}')
         raise InternalServerError from ex
 
     return response_data, response_status, response_headers

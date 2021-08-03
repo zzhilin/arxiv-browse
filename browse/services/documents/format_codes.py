@@ -1,19 +1,11 @@
-"""Functions that support determintation of dissemination formats."""
-import os
+"""Shared functions that support determination of dissemination formats."""
 import re
-from operator import itemgetter
-from typing import Dict, List, Optional
-
-import tarfile
-from tarfile import ReadError, CompressionError
+from typing import List, Optional
 
 import logging
 logger = logging.getLogger(__name__)
 
-# List of tuples containing the valid source file name extensions and their
-# corresponding dissemintation formats.
-# There are minor performance implications in the ordering when doing
-# filesystem lookups, so the ordering here should be preserved.
+
 VALID_SOURCE_EXTENSIONS = [
     ('.tar.gz', None),
     ('.pdf', ['pdfonly']),
@@ -22,18 +14,21 @@ VALID_SOURCE_EXTENSIONS = [
     ('.dvi.gz', None),
     ('.html.gz', ['html'])
 ]
+"""List of tuples containing the valid source file name extensions and
+their corresponding dissemination formats.  There are minor
+performance implications in the ordering when doing filesystem
+lookups, so the ordering here should be preserved."""
 
-
-def formats_from_source_file_name(source_file_path: str) -> List[str]:
-    """Get list of formats based on source file name."""
-    if not source_file_path:
-        return []
-    for extension in VALID_SOURCE_EXTENSIONS:
-        if source_file_path.endswith(extension[0]) \
-                and isinstance(extension[1], list):
-            return extension[1]
-    return []
-
+VALID_SOURCE_FORMATS = {
+    'docx': ['pdf', 'other'],
+    'html': ['html', 'other'],
+    'pdf': ['pdfonly'],
+    'pdftex': None,
+    'ps': ['pdf', 'ps'],
+    'tex': None,
+    'withdrawn': ['src']
+}
+"""Dict of source format strings and their corresponding dissemination formats."""
 
 def formats_from_source_type(source_type: str,
                              format_pref: Optional[str] = None,
@@ -80,7 +75,7 @@ def formats_from_source_type(source_type: str,
     append_other = False
     logger.debug(f'In formats_from_source_type: source_type is '
                  f'"{source_type}", format_pref is {format_pref} cache_flag is {cache_flag}')
-    
+
     if has_ignore and not has_encrypted_source:
         formats.append('src')
     elif has_ps_only:
@@ -136,25 +131,3 @@ def has_ancillary_files(source_type: str) -> bool:
     if not source_type:
         return False
     return re.search('A', source_type, re.IGNORECASE) is not None
-
-
-def list_ancillary_files(tarball_path: str) -> List[Dict]:
-    """Return a list of ancillary files in a tarball (.tar.gz file)."""
-    if not tarball_path or not tarball_path.endswith('.tar.gz') \
-       or not os.path.isfile(tarball_path):
-        return []
-
-    anc_files = []
-    try:
-        tf = tarfile.open(tarball_path, mode='r')
-        for member in \
-                (m for m in tf if re.search(r'^anc\/', m.name) and m.isfile()):
-            name = re.sub(r'^anc\/', '', member.name)
-            size_bytes = member.size
-            anc_files.append({'name': name, 'size_bytes': size_bytes})
-    except (ReadError, CompressionError):
-        # TODO: log this?, no probably raise and let caller handle what to do
-        return []
-    if len(anc_files) > 1:
-        anc_files = sorted(anc_files, key=itemgetter('name'))
-    return anc_files

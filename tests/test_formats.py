@@ -1,9 +1,8 @@
 """Tests for formats logic."""
 
 from unittest import TestCase
-from browse.services.util.formats import formats_from_source_file_name,\
-    formats_from_source_type
-
+from browse.services.documents.format_codes import formats_from_source_type
+from browse.services.documents.fs_implementation.formats import formats_from_source_file_name
 
 class TestFormats(TestCase):
     """Tests for formats logic."""
@@ -25,6 +24,14 @@ class TestFormats(TestCase):
         """Tests formats based on metadata source type and other parameters."""
         self.assertListEqual(formats_from_source_type('I'), ['src'])
         self.assertListEqual(formats_from_source_type('IS'),
+                             ['pdf', 'ps', 'other'])
+        self.assertListEqual(formats_from_source_type('1S'),
+                             ['pdf', 'ps', 'other'])
+        self.assertListEqual(formats_from_source_type('1'),
+                             ['pdf', 'ps', 'other'])
+        self.assertListEqual(formats_from_source_type(None),
+                             ['pdf', 'ps', 'other'])
+        self.assertListEqual(formats_from_source_type(''),
                              ['pdf', 'ps', 'other'])
         self.assertListEqual(formats_from_source_type('', cache_flag=True),
                              ['nops', 'other'])
