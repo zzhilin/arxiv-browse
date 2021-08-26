@@ -1,7 +1,8 @@
 {#- News items appear in the news block on the homepage. Generally there should be no more than four items. -#}
 {%- set rd_int = request_datetime.strftime("%Y%m%d%H%M")|int -%}
+<img src="{{ url_for('base.static', filename='images/icons/30th-anniversary-slogan.png') }}" alt="30 years of open science" class="float-end ms-1" width="120" style="width:120px;">
 <ul>
-  <li>Welcome to Phoenix, the arXiv beta! <a href="#">View the Phoenix roadmap</a>.</li>
+  <li><a href="https://blog.arxiv.org/2021/08/13/celebrating-arxivs-30th-anniversary/" target="_blank">Celebrating {{ macros.accessible_name() }}'s 30th anniversary!</a> 1991-2021.</li>
   <li>We are please to announce <a href="https://blog.arxiv.org/2021/05/13/linking-to-datasets-on-arxiv/" target="_blank">linking to datasets is now possible</a> on {{ macros.accessible_name() }}, in partnership with Papers With Code.</li>
   <li><a href="https://blog.arxiv.org/2021/02/26/why-arxiv-needs-a-brand/" target="_blank">Why {{ macros.accessible_name() }} needs a brand</a> to thrive for the next 30 years.</li>
   {%- if rd_int >= 2020051800 and rd_int <= 2020052700 -%}
