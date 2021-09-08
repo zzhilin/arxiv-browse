@@ -23,7 +23,7 @@ flask-wtf = "*"
 arxiv-auth = "^0.4.3rc4"
 mypy = "*"
 flask-s3 = "*"
-arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git",branch = "ARXIVNG-3824-bootstrap", develop = true}
+arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git/", rev = "4c4812c8957ff0152e16fc701782acb2986f005d"}
 retry = "==0.9.2"
 geoip2 = "*"
 bcrypt = "*"
