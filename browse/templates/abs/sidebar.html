@@ -165,6 +165,29 @@ function toggleList(whichLayer,toggleThis)
 {% endif %}
 
 <div class="arxiv-downloads row align-items-center g-1">
+
+
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+    Launch demo modal
+  </button>
+
+  <!-- Modal -->
+  <div style="z-index:10" class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+
+        <div class="modal-body" style="height:90%;margin:5%;">
+          PDF WILL RENDER HERE
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+
+
   <div class="col-auto">
     {{ generate_download_button('btn-lg') }}
   </div>
