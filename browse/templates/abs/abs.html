@@ -29,50 +29,49 @@
 {% endblock addl_head %}
 
 {%- block content %}
-{% set download_button %}
-  {{ generate_download_button('d-md-none arxiv-mobile-download') }}
-{% endset %}
+  {% set download_button %}
+    {{ generate_download_button('d-md-none arxiv-mobile-download') }}
+  {% endset %}
 
-{% block breadcrumbs %}
-{% endblock breadcrumbs %}
+  {% block breadcrumbs %}
+  {% endblock breadcrumbs %}
 
-<div class="row">
-  <div class="col-md">
+  {% if is_covid_match %}
+  <div class="alert alert-primary" role="alert">
+    <h4 class="alert-heading">COVID-19 e-print</h4>
+    <p><em>Important:</em> e-prints posted on arXiv are not peer-reviewed by arXiv; they should not be relied upon without context to guide clinical practice or health-related behavior and should not be reported in news media as established information without consulting multiple experts in the field.</p>
+  </div>
+  {% endif -%}
 
-    {% if is_covid_match %}
-    <div class="alert alert-primary" role="alert">
-      <h4 class="alert-heading">COVID-19 e-print</h4>
-      <p><em>Important:</em> e-prints posted on arXiv are not peer-reviewed by arXiv; they should not be relied upon without context to guide clinical practice or health-related behavior and should not be reported in news media as established information without consulting multiple experts in the field.</p>
+  <div class="arxiv-download-buttons d-flex d-md-block gap-2 float-md-end">
+    {{ generate_download_button('btn-lg') }}
+    {{ generate_read_button('btn-lg') }}
+  </div>
+
+  <h1>Title here</h1>
+  {{ authors_list() }}
+  <div class="authors"><a href="">authors list</a>. Submitter: Name Here [<a href="">view email</a>]</div>
+  <p>abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. </p>
+  <div class="row g-0">
+    <div class="col">
+      <ul class="metadata list-group list-group-flush border">
+        <li class="list-group-item">arXiv ID</li>
+        <li class="list-group-item">Date Submitted</li>
+        <li class="list-group-item">Version History</li>
+        <li class="list-group-item">Categorization</li>
+      </ul>
     </div>
-    {% endif -%}
-
-    {{
-      base_macros.abs(
-      abs_meta.arxiv_identifier.id,
-      abs_meta.title,
-      display_authors_with_links(abs_meta, author_links),
-      abs_meta.abstract,
-      abs_meta.get_datetime_of_version(abs_meta.version),
-      abs_meta.primary_category.id,
-      comments = abs_meta.comments,
-      msc_class = abs_meta.msc_class,
-      acm_class = abs_meta.acm_class,
-      journal_ref = abs_meta.journal_ref,
-      doi = abs_meta.doi,
-      report_num = abs_meta.report_num,
-      version = abs_meta.version,
-      submission_history = abs_meta.version_history,
-      secondary_categories = abs_meta.get_secondaries(),
-      download_button_markup = download_button )
-    }}
+    <div class="col">
+      <ul class="metadata list-group list-group-flush border">
+        <li class="list-group-item">Cite As</li>
+        <li class="list-group-item">arXiv DOI</li>
+        <li class="list-group-item">Author/Publisher DOI</li>
+        <li class="list-group-item">Journal Reference</li>
+        <li class="list-group-item">License</li>
+      </ul>
+    </div>
   </div>
-  <div class="arxiv-sidebar col-md-5 col-lg-4 col-xl-3 border-start extra-services">
-    {% include "abs/sidebar.html" %}
-    {%- include "abs/trackback_rdf.html" %}
-    <!-- <a id="mathjax_toggle" href="javascript:setMathjaxCookie()">Disable MathJax</a> (<a href="{{ url_for('help_mathjax') }}">What is MathJax?</a> -->
-    <script type="text/javascript" language="javascript">mathjaxToggle();</script>
-  </div>
-</div><!-- /end row -->
+  <a href="">Which authors of this paper are endorsers?</a>
 {% endblock content %}
 
 {% block content_extra %}
@@ -80,6 +79,10 @@
   {% include "abs/labs_tabs.html" %}
 </div>
 {% endblock content_extra %}
+
+
+
+
 
 
 
@@ -151,16 +154,208 @@
   {%- endif -%}
 {%- endmacro -%}
 
+
+
+
+
+{% macro authors_list (authors) %}
+  <p class="hereiam">{{ authors }}</p>
+{% endmacro %}
+
+
+
+{% macro abs(
+    arxiv_id,
+    title,
+    authors,
+    abstract,
+    submitted_date,
+    primary_category,
+    comments = None,
+    msc_class = None,
+    acm_class = None,
+    journal_ref = None,
+    doi = None,
+    report_num = None,
+    version = 1,
+    submission_history = [],
+    secondary_categories = [],
+    include_stylesheet = 1,
+    embed_stylesheet = 0,
+    download_button_markup = None) -%}
+<!-- {% if include_stylesheet and not embed_stylesheet %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('base.static', filename='css/abs.css') }}">
+{% endif %}
+{% if embed_stylesheet %}
+  <style>
+  {{ 'css/abs.css'|embed_content }}
+  </style>
+{% endif %} -->
+<div class="arxiv-abstract">
+    <div class="dateline">{{ abs_date_line(arxiv_id, submitted_date, version, submission_history) }}</div>
+    <h1 class="title mathjax">{{ title|tex2utf|arxiv_id_urlize|safe }}</h1>
+    <div class="authors">{{ authors }}</div>
+
+    {#- optionally include markup for the download button -#}
+    {% if download_button_markup %}
+      {{ download_button_markup }}
+    {% endif %}
+
+    <div class="abstract mathjax">
+      {{ abstract|tex2utf_no_symbols|abstract_lf_to_br|urlize|safe }}
+    </div>
+
+    <ul class="metadata list-group list-group-flush border">
+      <li class="list-group-item">
+        <strong>arXiv identifier:</strong>
+        arXiv:{{ arxiv_id }}
+      </li>
+      <li class="list-group-item">
+        <strong>Date submitted:</strong>
+        {{ submitted_date }}
+      </li>
+      {%- if comments %}
+      <li class="list-group-item">
+        <strong>Comments:</strong>
+        <span class="comments">{{ comments|tex2utf|urlize|safe }}</span>
+      </li>
+      {% endif -%}
+      <li class="list-group-item">
+        <strong>Subjects:</strong>
+        <span class="subjects">
+          <span class="primary-subject">{{ primary_category|get_category_display }}</span>
+        {%- for category in secondary_categories|sort(attribute='id') -%}; {{ category|get_category_display }}{%- endfor -%}
+        </span>
+      </li>
+      {%- if msc_class %}
+      <li class="list-group-item">
+        <strong>MSC Classes:</strong>
+        {{ msc_class }}
+      </li>
+      {% endif -%}
+      {%- if acm_class %}
+      <li class="list-group-item">
+        <strong>ACM Classes:</strong>
+        {{ acm_class }}
+      </li>
+      {% endif -%}
+      {%- if journal_ref %}
+      <li class="list-group-item">
+        <strong>Journal References:</strong>
+        {{ journal_ref|tex2utf }}
+      </li>
+      {% endif -%}
+      {%- if doi %}
+      <li class="list-group-item">
+        <strong>DOI:</strong>
+        {{ doi|escape|abs_doi_to_urls|safe }}
+      </li>
+      {% endif -%}
+      {%- if report_num %}
+      <li class="list-group-item">
+        <strong>Report Number:</strong>
+        {{ report_num }}
+      </li>
+      {% endif -%}
+    </ul>
+
+    <!--CONTEXT-->
+    <!-- <div class="metatable">
+      <table summary="Additional metadata">
+        {%- if comments %}
+        <tr>
+          <td class="tablecell label">Comments:</td>
+          <td class="tablecell comments mathjax">{{ comments|tex2utf|urlize|safe }}</td>
+        </tr>
+        {% endif -%}
+        <tr>
+          <td class="tablecell label">Subjects:</td>
+          <td class="tablecell subjects">
+            <span class="primary-subject">{{ primary_category|get_category_display }}</span>
+            {%- for category in secondary_categories|sort(attribute='id') -%}; {{ category|get_category_display }}{%- endfor -%}
+          </td>
+        </tr>
+        {%- if msc_class %}
+        <tr>
+          <td class="tablecell label"><abbr title="Mathematical Subject Classification">MSC</abbr> classes:</td>
+          <td class="tablecell msc-classes">{{ msc_class }}</td>
+        </tr>
+        {% endif -%}
+        {%- if acm_class %}
+        <tr>
+          <td class="tablecell label"><abbr title="Association of Computing Machinery Classification">ACM</abbr>&nbsp;classes:</td>
+          <td class="tablecell acm-classes">{{ acm_class }}</td>
+        </tr>
+        {% endif -%}
+        {%- if journal_ref %}
+        <tr>
+          <td class="tablecell label">Journal&nbsp;reference:</td>
+          <td class="tablecell jref">{{ journal_ref|tex2utf }}</td>
+        </tr>
+        {% endif -%}
+        {%- if doi %}
+        <tr>
+          <td class="tablecell label"><abbr title="Digital Object Identifier">DOI</abbr>:</td>
+          <td class="tablecell msc_classes">{{ doi|escape|abs_doi_to_urls|safe }}</td>
+        </tr>
+        {% endif -%}
+        {%- if report_num %}
+        <tr>
+          <td class="tablecell label">Report&nbsp;number:</td>
+          <td class="tablecell jref">{{ report_num }}</td>
+        </tr>
+        {% endif -%}
+        <tr>
+          <td class="tablecell label">Cite as:</td>
+          <td class="tablecell arxivid"><span class="arxivid">{{ version_atag(arxiv_id, 0, primary_category) }}</span></td>
+        </tr>
+        <tr>
+          <td class="tablecell label">&nbsp;</td>
+          <td class="tablecell arxividv">(or <span class="arxivid">
+              {{ version_atag(arxiv_id, version, primary_category) }}</span> for this version)
+          </td>
+        </tr>
+      </table>
+    </div> -->
+
+</div>
+{%- endmacro -%}
+
+
+
 {% macro generate_download_button(display) %}
   {#- to display only on mobile use this display class: d-sm-none -#}
   {% if formats|length > 0 and ('pdf' in formats or 'pdfonly' in formats) %}
-    <a class="btn btn-primary {{ display }}" href="{{url_for('.pdf', arxiv_id=requested_id)}}">
+    <button class="btn btn-primary {{ display }}" href="{{url_for('.pdf', arxiv_id=requested_id)}}">
       <svg width="20" height="20" fill="currentColor" role="presentation">
-        <use xlink:href="{{ url_for('base.static', filename='images/icons/custom-icons.svg') }}#pdf-file"/>
+        <use xlink:href="{{ url_for('base.static', filename='bootstrap/bootstrap-icons.svg') }}#file-arrow-down"/>
       </svg>
       Download PDF
-    </a>
+    </button>
   {% else %}
-    <a class="btn disabled d-sm-none" href="#other">No PDF available, click to view other formats</a>
+    <button class="btn disabled d-sm-none" href="#other">No PDF available, click to view other formats</button>
   {% endif %}
+{% endmacro %}
+
+{% macro generate_read_button(display) %}
+  {% if formats|length > 0 and ('pdf' in formats or 'pdfonly' in formats) %}
+    <button class="btn btn-primary btn-lg" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
+      <svg width="20" height="20" fill="currentColor" role="presentation">
+        <use xlink:href="{{ url_for('base.static', filename='bootstrap/bootstrap-icons.svg') }}#file-earmark-text"/>
+      </svg>
+      Read PDF
+    </button>
+  {% endif %}
+  <div class="offcanvas offcanvas-end w-100" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+    <div class="offcanvas-header">
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+    <embed type="application/pdf"
+        src="{{url_for('.pdf', arxiv_id=requested_id)}}#view=fitH&toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&navpanes=0&&pagemode=none"
+        width="100%"
+        height="100%">
+    </embed>
+    </div>
+  </div>
 {% endmacro %}
