@@ -25,10 +25,10 @@ $(document).ready(function() {
     }
   };
 
-  $.cachedScript(scripts["paperwithcode"]).done(function(script, textStatus) {
-    console.log(textStatus);
-  });
-  $("#paperwithcode-toggle.lab-toggle").toggleClass("enabled", true).prop("checked", true);
+  // $.cachedScript(scripts["paperwithcode"]).done(function(script, textStatus) {
+  //   console.log(textStatus);
+  // });
+  // $("#paperwithcode-toggle.lab-toggle").toggleClass("enabled", true).prop("checked", true);
 
   var labsCookie = Cookies.getJSON("arxiv_labs");
   if (labsCookie) {
@@ -53,18 +53,18 @@ $(document).ready(function() {
             console.log(textStatus);
           });
         } else if (key === "paperwithcode-toggle") {
-          $.cachedScript(scripts["paperwithcode"]).done(function(script, textStatus) {
-            console.log(textStatus);
-          });
+          // $.cachedScript(scripts["paperwithcode"]).done(function(script, textStatus) {
+          //   console.log(textStatus);
+          // });
         } else if (key === "connectedpapers-toggle") {
           $.cachedScript(scripts["connectedpapers"]).done(function(script, textStatus) {
             console.log(textStatus);
           });
         }
       } else if (labsCookie[key] && labsCookie[key] == "disabled"){
-        if (key === "paperwithcode-toggle") {
-          pwcEnabled = false;
-        }
+        // if (key === "paperwithcode-toggle") {
+        //   pwcEnabled = true;
+        // }
       }
     }
   } else {

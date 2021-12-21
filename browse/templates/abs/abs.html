@@ -29,12 +29,11 @@
 {% endblock addl_head %}
 
 {%- block content %}
-  {% set download_button %}
-    {{ generate_download_button('d-md-none arxiv-mobile-download') }}
-  {% endset %}
-
-  {% block breadcrumbs %}
-  {% endblock breadcrumbs %}
+<div class="container">
+  <div class="arxiv-download-buttons d-flex d-md-block gap-2">
+    {{ generate_download_button('btn-lg') }}
+    {{ generate_read_button('btn-lg') }}
+  </div>
 
   {% if is_covid_match %}
   <div class="alert alert-primary" role="alert">
@@ -43,40 +42,75 @@
   </div>
   {% endif -%}
 
-  <div class="arxiv-download-buttons d-flex d-md-block gap-2 float-md-end">
-    {{ generate_download_button('btn-lg') }}
-    {{ generate_read_button('btn-lg') }}
+  {{ title() }}
+  <div class="author-info">
+    <ul class="unstyled-horizontal">
+      <li><a href="">Jane Doe</a></li>,
+      <li>
+        <a href="">Roberto Costo</a><a href=""><svg width="15" height="15" fill="currentColor" role="presentation">
+          <use xlink:href="{{ url_for('base.static', filename='images/icons/custom-icons.svg') }}#orcid"/>
+        </svg></a>
+      </li>,
+      <li><a href="">Zhao Xian</a></li>
+    </ul>
+    <p class="submitter">
+      <strong><em>Submitter:</em></strong> Zhao Xian [<a href="">view email</a>] <small>(Which authors of this paper are <a href="">endorsers</a>?)</small>
+    </p>
   </div>
 
-  <h1>Title here</h1>
-  {{ authors_list() }}
-  <div class="authors"><a href="">authors list</a>. Submitter: Name Here [<a href="">view email</a>]</div>
-  <p>abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. abstract to go here. </p>
-  <div class="row g-0">
-    <div class="col">
-      <ul class="metadata list-group list-group-flush border">
-        <li class="list-group-item">arXiv ID</li>
-        <li class="list-group-item">Date Submitted</li>
-        <li class="list-group-item">Version History</li>
-        <li class="list-group-item">Categorization</li>
-      </ul>
-    </div>
-    <div class="col">
-      <ul class="metadata list-group list-group-flush border">
-        <li class="list-group-item">Cite As</li>
-        <li class="list-group-item">arXiv DOI</li>
-        <li class="list-group-item">Author/Publisher DOI</li>
-        <li class="list-group-item">Journal Reference</li>
-        <li class="list-group-item">License</li>
-      </ul>
-    </div>
-  </div>
-  <a href="">Which authors of this paper are endorsers?</a>
+  {{ abstract() }}
+  {{ comment() }}
+</div>
 {% endblock content %}
 
 {% block content_extra %}
-<div class="arxiv-labs">
-  {% include "abs/labs_tabs.html" %}
+<div class="metadata row border-top mt-5">
+  <div class="col-12 col-md-6 col-lg-4 border-end">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item"><strong>Date Submitted:</strong> {{ generate_dateline() }}</li>
+      <li class="list-group-item"><strong>Version History:</strong> {{ version_atag() }}</li>
+      <li class="list-group-item"><strong>Categorization:</strong> {{ category_line() }}</li>
+    </ul>
+  </div>
+  <div class="col-12 col-md-6 col-lg-4 border-end">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item"><strong>arXiv ID:</strong> arXiv:{{ requested_id }}</li>
+      <li class="list-group-item"><strong>arXiv DOI:</strong> </li>
+      <li class="list-group-item"><strong>Author/Publisher DOI:</strong> {{ doi_publisher }}</li>
+      <li class="list-group-item"><strong>Journal Reference:</strong> {{ journal_ref }}</li>
+      <li class="list-group-item"><strong>License:</strong> {{ license }}</li>
+    </ul>
+  </div>
+  <div class="col-12 col-lg-4">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">
+        <strong>Cite As:</strong> <strong>{{ version_atag() }}</strong><br>
+        {% include "abs/bibtex_citation.html" %}
+      </li>
+      <li class="list-group-item"><strong>Code Associated with this Article:</strong>
+        <script src="{{ url_for('static', filename='js/paperswithcode.js') }}"></script>
+        <p>(ENABLE PwC, NO TOGGLE)</p>
+        <div id="pwc-output"></div>
+        <em>(<a href="https://labs.arxiv.org/" target="_blank">What is Links to Code?</a>)</em>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="arxiv-labs row border-top accordion accordion-flush">
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingOne">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+        Explore related papers
+      </button>
+    </h2>
+    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+      <div class="accordion-body">
+        <p>Collaborators have created these features to enhance arXiv functionality. Toggle them on and off to use. <a href="">Learn more about arXiv Labs collaborations.</a></p>
+        {% include "abs/labs.html" %}
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock content_extra %}
 
@@ -88,30 +122,9 @@
 
 
 
-{%- macro generate_version_entry(version_entry, this_version) %}
-  {%- if version_entry.version == this_version -%}
-  <strong>[v{{ version_entry.version }}]</strong>
-{% else %}
-  <strong><a href="{{ url_for('.abstract', arxiv_id='{}v{}'.format(abs_meta.arxiv_id, version_entry.version)) }}">[v{{ version_entry.version }}]</a></strong>
-  {% endif %}{{ version_entry.submitted_date.strftime('%a, %-d %b %Y %H:%M:%S %Z') }} ({{ "{:,}".format(version_entry.size_kilobytes) }} KB){#- ({{(version_entry.size_kilobytes*1000)|filesizeformat}}) -#}<br/>
-{%- endmacro -%}
 
-{%- macro generate_dateline() -%}
-  [Submitted on {{ abs_meta.version_history[0].submitted_date.strftime('%-d %b %Y') }}
-  {%- if abs_meta.version == 1 and abs_meta.version < abs_meta.version_history[-1].version %} (this version){%- endif -%}
-  {%- if abs_meta.version != 1 %} (<a href="{{ url_for('.abstract', arxiv_id='{}v1'.format(abs_meta.arxiv_id)) }}">v1</a>){%- endif %}
-  {%- if abs_meta.version > 1 and abs_meta.version < abs_meta.version_history[-1].version -%}
-  , revised {{ abs_meta.version_history[abs_meta.version-1].submitted_date.strftime('%-d %b %Y') }} (this version, v{{ abs_meta.version }})
-  {%- endif -%}
-  {%- if abs_meta.version != abs_meta.version_history[-1].version -%}
-  , <em>latest version {{ abs_meta.version_history[-1].submitted_date.strftime('%-d %b %Y') }}</em> (<a href="{{ url_for('.abstract', arxiv_id='{}v{}'.format(abs_meta.arxiv_id, abs_meta.version_history[-1].version)) }}">v{{ abs_meta.version_history[-1].version }}</a>)
-  {%- elif abs_meta.version > 1 and abs_meta.version == abs_meta.version_history[-1].version -%}
-  , last revised {{ abs_meta.version_history[-1].submitted_date.strftime('%-d %b %Y') }} (this version, v{{ abs_meta.version }})
-  {%- endif -%}
-  ]
-{%- endmacro -%}
 
-{%- macro generate_scholar_tags() -%}
+<!-- {%- macro generate_scholar_tags() -%}
 {%- if meta_tags %}
     {%- for tag in meta_tags %}
   <meta name="{{tag.name}}" content="{{tag.content}}"/>
@@ -130,6 +143,32 @@
     <meta property="og:title" content="{{ abs_meta.title|tex2utf }}"/>
     <meta property="og:url" content="{{ canonical_url(abs_meta.arxiv_id, abs_meta.version) }}"/>
     <meta property="og:description" content="{{ abs_meta.abstract|trim|tex2utf }}"/>
+{%- endmacro -%} -->
+
+
+
+{%- macro title() -%}
+  <h1>{{- abs_meta.title -}}</h1>
+{%- endmacro -%}
+
+{%- macro abstract() -%}
+  <p class="mt-3">{{- abs_meta.abstract|tex2utf_no_symbols|abstract_lf_to_br|urlize|safe -}}</p>
+{%- endmacro -%}
+
+{%- macro comment() -%}
+    <p><strong>Comments: </strong> {{- abs_meta.comments|tex2utf|urlize|safe -}}</p>
+{%- endmacro -%}
+
+{%- macro doi_publisher() -%}
+    {{ abs_meta.doi|escape|abs_doi_to_urls|safe }}
+{%- endmacro -%}
+
+{%- macro journal_ref() -%}
+    {{ abs_meta.journal_ref|tex2utf }}
+{%- endmacro -%}
+
+{%- macro license() -%}
+    {{ abs_meta.license_uri|tex2utf }}
 {%- endmacro -%}
 
 {%- macro category_line() -%}
@@ -139,6 +178,29 @@
         ; {{ category }}
     {%- endfor -%}
   {%- endif -%}
+{%- endmacro -%}
+
+{%- macro generate_version_entry(version_entry, this_version) %}
+  {%- if version_entry.version == this_version -%}
+    <strong>[v{{ version_entry.version }}]</strong>
+  {% else %}
+    <strong><a href="{{ url_for('.abstract', arxiv_id='{}v{}'.format(abs_meta.arxiv_id, version_entry.version)) }}">[v{{ version_entry.version }}]</a></strong>
+  {% endif %}{{ version_entry.submitted_date.strftime('%a, %-d %b %Y %H:%M:%S %Z') }} ({{ "{:,}".format(version_entry.size_kilobytes) }} KB){#- ({{(version_entry.size_kilobytes*1000)|filesizeformat}}) -#}<br/>
+{%- endmacro -%}
+
+{%- macro generate_dateline() -%}
+  [Submitted on {{ abs_meta.version_history[0].submitted_date.strftime('%-d %b %Y') }}
+  {%- if abs_meta.version == 1 and abs_meta.version < abs_meta.version_history[-1].version %} (this version){%- endif -%}
+  {%- if abs_meta.version != 1 %} (<a href="{{ url_for('.abstract', arxiv_id='{}v1'.format(abs_meta.arxiv_id)) }}">v1</a>){%- endif %}
+  {%- if abs_meta.version > 1 and abs_meta.version < abs_meta.version_history[-1].version -%}
+  , revised {{ abs_meta.version_history[abs_meta.version-1].submitted_date.strftime('%-d %b %Y') }} (this version, v{{ abs_meta.version }})
+  {%- endif -%}
+  {%- if abs_meta.version != abs_meta.version_history[-1].version -%}
+  , <em>latest version {{ abs_meta.version_history[-1].submitted_date.strftime('%-d %b %Y') }}</em> (<a href="{{ url_for('.abstract', arxiv_id='{}v{}'.format(abs_meta.arxiv_id, abs_meta.version_history[-1].version)) }}">v{{ abs_meta.version_history[-1].version }}</a>)
+  {%- elif abs_meta.version > 1 and abs_meta.version == abs_meta.version_history[-1].version -%}
+  , last revised {{ abs_meta.version_history[-1].submitted_date.strftime('%-d %b %Y') }} (this version, v{{ abs_meta.version }})
+  {%- endif -%}
+  ]
 {%- endmacro -%}
 
 {%- macro version_atag(arxiv_id, version, primary_category) -%}
@@ -154,179 +216,10 @@
   {%- endif -%}
 {%- endmacro -%}
 
-
-
-
-
-{% macro authors_list (authors) %}
-  <p class="hereiam">{{ authors }}</p>
-{% endmacro %}
-
-
-
-{% macro abs(
-    arxiv_id,
-    title,
-    authors,
-    abstract,
-    submitted_date,
-    primary_category,
-    comments = None,
-    msc_class = None,
-    acm_class = None,
-    journal_ref = None,
-    doi = None,
-    report_num = None,
-    version = 1,
-    submission_history = [],
-    secondary_categories = [],
-    include_stylesheet = 1,
-    embed_stylesheet = 0,
-    download_button_markup = None) -%}
-<!-- {% if include_stylesheet and not embed_stylesheet %}
-<link rel="stylesheet" type="text/css" href="{{ url_for('base.static', filename='css/abs.css') }}">
-{% endif %}
-{% if embed_stylesheet %}
-  <style>
-  {{ 'css/abs.css'|embed_content }}
-  </style>
-{% endif %} -->
-<div class="arxiv-abstract">
-    <div class="dateline">{{ abs_date_line(arxiv_id, submitted_date, version, submission_history) }}</div>
-    <h1 class="title mathjax">{{ title|tex2utf|arxiv_id_urlize|safe }}</h1>
-    <div class="authors">{{ authors }}</div>
-
-    {#- optionally include markup for the download button -#}
-    {% if download_button_markup %}
-      {{ download_button_markup }}
-    {% endif %}
-
-    <div class="abstract mathjax">
-      {{ abstract|tex2utf_no_symbols|abstract_lf_to_br|urlize|safe }}
-    </div>
-
-    <ul class="metadata list-group list-group-flush border">
-      <li class="list-group-item">
-        <strong>arXiv identifier:</strong>
-        arXiv:{{ arxiv_id }}
-      </li>
-      <li class="list-group-item">
-        <strong>Date submitted:</strong>
-        {{ submitted_date }}
-      </li>
-      {%- if comments %}
-      <li class="list-group-item">
-        <strong>Comments:</strong>
-        <span class="comments">{{ comments|tex2utf|urlize|safe }}</span>
-      </li>
-      {% endif -%}
-      <li class="list-group-item">
-        <strong>Subjects:</strong>
-        <span class="subjects">
-          <span class="primary-subject">{{ primary_category|get_category_display }}</span>
-        {%- for category in secondary_categories|sort(attribute='id') -%}; {{ category|get_category_display }}{%- endfor -%}
-        </span>
-      </li>
-      {%- if msc_class %}
-      <li class="list-group-item">
-        <strong>MSC Classes:</strong>
-        {{ msc_class }}
-      </li>
-      {% endif -%}
-      {%- if acm_class %}
-      <li class="list-group-item">
-        <strong>ACM Classes:</strong>
-        {{ acm_class }}
-      </li>
-      {% endif -%}
-      {%- if journal_ref %}
-      <li class="list-group-item">
-        <strong>Journal References:</strong>
-        {{ journal_ref|tex2utf }}
-      </li>
-      {% endif -%}
-      {%- if doi %}
-      <li class="list-group-item">
-        <strong>DOI:</strong>
-        {{ doi|escape|abs_doi_to_urls|safe }}
-      </li>
-      {% endif -%}
-      {%- if report_num %}
-      <li class="list-group-item">
-        <strong>Report Number:</strong>
-        {{ report_num }}
-      </li>
-      {% endif -%}
-    </ul>
-
-    <!--CONTEXT-->
-    <!-- <div class="metatable">
-      <table summary="Additional metadata">
-        {%- if comments %}
-        <tr>
-          <td class="tablecell label">Comments:</td>
-          <td class="tablecell comments mathjax">{{ comments|tex2utf|urlize|safe }}</td>
-        </tr>
-        {% endif -%}
-        <tr>
-          <td class="tablecell label">Subjects:</td>
-          <td class="tablecell subjects">
-            <span class="primary-subject">{{ primary_category|get_category_display }}</span>
-            {%- for category in secondary_categories|sort(attribute='id') -%}; {{ category|get_category_display }}{%- endfor -%}
-          </td>
-        </tr>
-        {%- if msc_class %}
-        <tr>
-          <td class="tablecell label"><abbr title="Mathematical Subject Classification">MSC</abbr> classes:</td>
-          <td class="tablecell msc-classes">{{ msc_class }}</td>
-        </tr>
-        {% endif -%}
-        {%- if acm_class %}
-        <tr>
-          <td class="tablecell label"><abbr title="Association of Computing Machinery Classification">ACM</abbr>&nbsp;classes:</td>
-          <td class="tablecell acm-classes">{{ acm_class }}</td>
-        </tr>
-        {% endif -%}
-        {%- if journal_ref %}
-        <tr>
-          <td class="tablecell label">Journal&nbsp;reference:</td>
-          <td class="tablecell jref">{{ journal_ref|tex2utf }}</td>
-        </tr>
-        {% endif -%}
-        {%- if doi %}
-        <tr>
-          <td class="tablecell label"><abbr title="Digital Object Identifier">DOI</abbr>:</td>
-          <td class="tablecell msc_classes">{{ doi|escape|abs_doi_to_urls|safe }}</td>
-        </tr>
-        {% endif -%}
-        {%- if report_num %}
-        <tr>
-          <td class="tablecell label">Report&nbsp;number:</td>
-          <td class="tablecell jref">{{ report_num }}</td>
-        </tr>
-        {% endif -%}
-        <tr>
-          <td class="tablecell label">Cite as:</td>
-          <td class="tablecell arxivid"><span class="arxivid">{{ version_atag(arxiv_id, 0, primary_category) }}</span></td>
-        </tr>
-        <tr>
-          <td class="tablecell label">&nbsp;</td>
-          <td class="tablecell arxividv">(or <span class="arxivid">
-              {{ version_atag(arxiv_id, version, primary_category) }}</span> for this version)
-          </td>
-        </tr>
-      </table>
-    </div> -->
-
-</div>
-{%- endmacro -%}
-
-
-
-{% macro generate_download_button(display) %}
+{% macro generate_download_button(class) %}
   {#- to display only on mobile use this display class: d-sm-none -#}
   {% if formats|length > 0 and ('pdf' in formats or 'pdfonly' in formats) %}
-    <button class="btn btn-primary {{ display }}" href="{{url_for('.pdf', arxiv_id=requested_id)}}">
+    <button class="btn btn-primary {{ class }}" href="{{url_for('.pdf', arxiv_id=requested_id)}}">
       <svg width="20" height="20" fill="currentColor" role="presentation">
         <use xlink:href="{{ url_for('base.static', filename='bootstrap/bootstrap-icons.svg') }}#file-arrow-down"/>
       </svg>
@@ -337,9 +230,9 @@
   {% endif %}
 {% endmacro %}
 
-{% macro generate_read_button(display) %}
+{% macro generate_read_button(class) %}
   {% if formats|length > 0 and ('pdf' in formats or 'pdfonly' in formats) %}
-    <button class="btn btn-primary btn-lg" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
+    <button class="btn btn-primary {{ class }}" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
       <svg width="20" height="20" fill="currentColor" role="presentation">
         <use xlink:href="{{ url_for('base.static', filename='bootstrap/bootstrap-icons.svg') }}#file-earmark-text"/>
       </svg>
@@ -359,3 +252,68 @@
     </div>
   </div>
 {% endmacro %}
+
+
+
+# MACRO NEEDS FIXING
+{%- macro author_list(abs_meta, authors) %}
+    {%- for part in authors -%}
+        {%- if part is string -%}
+            {{- part -}}
+        {%- else -%}
+            <a href="{{ url_for('search_archive', searchtype='author', archive=abs_meta.primary_archive.id, query=part[1]) }}">{{ part[0] }}</a>
+        {%- endif -%}
+    {% endfor %}
+{%- endmacro -%}
+
+{%- macro display_authors_with_links(abs_meta, author_links) %}
+  {{- author_list(abs_meta, author_links[0]) }}
+
+  {%- if author_links[1] %}
+    {% if author_links[2] == 1 %}
+      {{ author_list(author_links[1]) }}
+    {% else %}
+
+  <script type="text/javascript">
+  <!--
+  function toggleAuthorList(whichLayer,toggleThis)
+  {
+    var elem, vis, tempToggle;
+    tempToggle=toggleThis;
+    if( document.getElementById ) // standard
+        elem = document.getElementById( whichLayer );
+    else if( document.all ) // old msie versions
+        elem = document.all[whichLayer];
+    else if( document.layers ) // nn4
+        elem = document.layers[whichLayer];
+    vis = elem.style;
+    // if the style.display value is blank we try to figure it out here
+    if(vis.display==''&&elem.offsetWidth!=undefined&&elem.offsetHeight!=undefined)
+      vis.display = (elem.offsetWidth!=0&&elem.offsetHeight!=0)?'inline':'none';
+    vis.display = (vis.display==''||vis.display=='inline')?'none':'inline';
+
+    // toggle link inner text
+    status = vis.display;
+    if(status=='none'){
+        document.getElementById('toggle').innerHTML = tempToggle ;
+        document.getElementById('toggle').title = "Show Entire Author List";
+    }
+    else if(status=='inline'){
+        document.getElementById('toggle').innerHTML = "(collapse list)";
+        document.getElementById('toggle').title = "Collapse Author List";
+    }
+  }
+  //-->
+  </script>
+
+    <div id="long-author-list" style="display: none;">
+          {{ author_list(abs_meta, author_links[1]) }}
+    </div>
+    <a href="javascript:toggleAuthorList('long-author-list','et al. ({{ author_links[2] }} additional authors not shown)');"
+       title="Show Entire Author List" id="toggle">
+      et al. ({{ author_links[2] }} additional authors not shown)</a>
+    <noscript>&nbsp;You must enable JavaScript to view entire author list.</noscript>
+
+    {%- endif -%}
+  {% endif -%}
+{%- endmacro -%}
