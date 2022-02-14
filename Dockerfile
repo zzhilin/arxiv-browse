@@ -39,6 +39,6 @@ ENV LOGLEVEL 40
 ENV FLASK_DEBUG 1
 ENV FLASK_APP /opt/arxiv/app.py
 
-EXPOSE 8000
+EXPOSE 80
 ENTRYPOINT ["pipenv", "run"]
 CMD ["uwsgi", "--ini", "/opt/arxiv/uwsgi.ini"]
