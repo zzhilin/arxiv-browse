@@ -1,4 +1,4 @@
-export SANDBOX_NAME=
+export SANDBOX_NAME=google-dw
 if [[ -z "$SANDBOX_NAME" ]]; then
     echo "Must provide SANDBOX_NAME environment variables in config.sh" 1>&2
     exit 1
