@@ -373,3 +373,16 @@ URLS = [
     # This is a temporary workaround for ARXIVNG-2063
 ]
 """External URLs."""
+
+CDN_ENABLED = os.environ.get("CDN_ENABLED", False)
+"""Is this app should redirect CDN at Google for downloads if that is fresh."""
+
+CDN_HOST = os.environ.get("CDN_HOST", 'download.arxiv.org')
+"""Hostname for CDN"""
+
+DOWNLOAD_FALLBACK_URL = os.environ.get("PDF_MAIN_SITE_URL", "https://arxiv.org/pdf/")
+"""Url to use to reverse proxy downloads of articles if CDN does not have it"""
+
+DOWNLOAD_FALLBACK_CHUNK_SIZE = os.environ.get('DOWNLOAD_FALLBACK_CHUNK_SIZE', 50*1024)
+"""Size in bytes of the buffer for reverse proxying a fallback
+download for an article from arxiv.org."""

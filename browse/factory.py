@@ -1,5 +1,7 @@
 """Application factory for browse service components."""
 from functools import partial
+import logging
+
 from flask import Flask
 from flask_s3 import FlaskS3
 
@@ -9,6 +11,7 @@ from browse.routes import ui
 from browse.services.database import models
 from browse.services.util.email import generate_show_email_hash
 from browse.filters import entity_to_utf
+from browse.controllers.pdf import pdf
 
 from arxiv.base.config import BASE_SERVER
 from arxiv.base import Base
@@ -30,6 +33,11 @@ def create_web_app() -> Flask:
 
     models.init_app(app)  # type: ignore
     Base(app)
+
+    from flask.logging import default_handler
+    root = logging.getLogger()
+    root.addHandler(default_handler)
+
     Auth(app)
     app.register_blueprint(ui.blueprint)
     s3.init_app(app)
@@ -52,5 +60,9 @@ def create_web_app() -> Flask:
     app.jinja_env.filters['arxiv_id_urls'] = urlizer(['arxiv_id'])
     app.jinja_env.filters['arxiv_urlize'] = urlizer(['arxiv_id', 'doi', 'url'])
     app.jinja_env.filters['arxiv_id_doi_filter'] = urlizer(['arxiv_id', 'doi'])
+
+    # Added outside of normal blueprint since it is mapped to / and does
+    # pre-request handling that is not needed for pdfs.
+    app.route('/pdf/<string:arxiv_id>')(pdf)
 
     return app

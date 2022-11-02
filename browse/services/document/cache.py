@@ -5,7 +5,7 @@ from functools import wraps
 from typing import Optional
 
 from arxiv.base.globals import get_application_config, get_application_global
-from browse.domain.metadata import DocMetadata
+from browse.domain.metadata import DocMetadata, Identifier
 
 
 # Formats that currently reside in the cache filesystem
@@ -38,34 +38,57 @@ class DocumentCacheSession():
     def get_cache_file_path(self, docmeta: DocMetadata, cache_format: str)\
             -> Optional[str]:
         """Get the absolute path of the cache file/directory if it exists."""
+        cache_file_path = self.cache_file_path_for_id(docmeta.arxiv_identifier, cache_format, version=docmeta.version)
+        if cache_file_path and os.path.isfile(cache_file_path):
+            return cache_file_path
+        else:
+            return None
+
+    def cache_file_path_for_id(self, identifier: Identifier, cache_format: str, version: int=0)\
+            -> str:
+        """Get the absolute path of the cache file/directory if it exists.
+
+        Parameters
+        ----------
+        identifier : Identifier
+        cache_format : str
+        version : Version from `identifier` is used unless this is non-zero. Must be > 0 if passed.
+
+        Returns
+        -------
+        Optional[str]
+
+        Path to dissemination file. Returns the path if the file exists or if it does not exist.
+        """
         if cache_format not in CACHE_FORMATS:
-            raise DocumentCacheFormatException('Invalid cache file format: '
-                                               f'{cache_format}')
-        identifier = docmeta.arxiv_identifier
+            raise DocumentCacheFormatException(f'Invalid cache file format: {cache_format}')
+
+        if not version:
+            if identifier.has_version and identifier.version > 0:
+                version = identifier.version
+            else:
+                raise DocumentCacheException('Identifier lacked version')
+
+        archive = ('arxiv' if not identifier.is_old_id or
+                   identifier.archive is None else identifier.archive)
+
         parent_path = os.path.join(
             self.document_cache_path,
-            ('arxiv' if not identifier.is_old_id or identifier.archive is None
-             else identifier.archive),
+            archive,
             cache_format,
             identifier.yymm,
-            f'{identifier.filename}v{docmeta.version}'
+            f'{identifier.filename}v{version}'
         )
         if cache_format == 'html' and os.path.isdir(parent_path):
-            # HTML is directory-based
-            return parent_path
+            return parent_path  # HTML is directory-based
 
         extension = f'.{cache_format}'
         if re.match(r'^other', cache_format):
             extension = '.ps.gz'
-            return None  # TODO is this correct? extension is unused?
         elif type == 'ps':
-            extension = f'{extension}.gz'
-            cache_file_path = f'{parent_path}{extension}'
-            if os.path.isfile(cache_file_path):
-                return cache_file_path
-        else:
-            return None
-        return None
+            extension = f'.gz'
+
+        return f'{parent_path}{extension}'
 
 
 @wraps(DocumentCacheSession.get_cache_file_path)
@@ -78,7 +101,6 @@ def get_session(app: object = None) -> DocumentCacheSession:
     """Get a new session with the document cache service."""
     config = get_application_config(app)
     document_cache_path = config.get('DOCUMENT_CACHE_PATH', None)
-
     return DocumentCacheSession(document_cache_path)
 
 
@@ -91,3 +113,22 @@ def current_session() -> DocumentCacheSession:
         g.doc_cache = get_session()
     assert isinstance(g.doc_cache, DocumentCacheSession)
     return g.doc_cache
+
+
+def cache_file_path_for_id(identifier: Identifier, cache_format: str, version: int=0)\
+    -> str:
+    """Get the absolute path of the cache file/directory if it exists.
+
+        Parameters
+        ----------
+        identifier : Identifier
+        cache_format : str
+        version : Version from `identifier` is used unless this is non-zero. Must be > 0 if passed.
+
+        Returns
+        -------
+        Optional[str]
+
+        Path to dissemination file. Returns the path if the file exists or if it does not exist.
+        """
+    return current_session().cache_file_path_for_id(identifier, cache_format, version)

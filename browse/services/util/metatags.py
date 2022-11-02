@@ -78,7 +78,7 @@ def meta_tag_metadata(metadata: DocMetadata, truncate: bool = False) -> List:
     meta_tags.append(
         _mtag(
             "citation_pdf_url",
-            url_for("browse.pdf", arxiv_id=metadata.arxiv_id, _external=True),
+            url_for("pdf", arxiv_id=metadata.arxiv_id, _external=True),
         )
     )
     meta_tags.append(_mtag("citation_arxiv_id", str(metadata.arxiv_id)))
