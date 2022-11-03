@@ -380,7 +380,7 @@ CDN_ENABLED = os.environ.get("CDN_ENABLED", False)
 CDN_HOST = os.environ.get("CDN_HOST", 'download.arxiv.org')
 """Hostname for CDN"""
 
-DOWNLOAD_FALLBACK_URL = os.environ.get("PDF_MAIN_SITE_URL", "https://arxiv.org/pdf/")
+DOWNLOAD_FALLBACK_URL = os.environ.get("DOWNLOAD_FALLBACK_URL", "https://arxiv.org/pdf/")
 """Url to use to reverse proxy downloads of articles if CDN does not have it"""
 
 DOWNLOAD_FALLBACK_CHUNK_SIZE = os.environ.get('DOWNLOAD_FALLBACK_CHUNK_SIZE', 50*1024)

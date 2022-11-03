@@ -8,9 +8,13 @@ from flask import current_app, request, Response
 import requests
 
 from arxiv import identifier
+
 from browse.domain.identifier import Identifier
 
-DOWNLOAD_HOST = "download.arxiv.org"
+import logging
+log = logging.getLogger(__file__)
+log.setLevel(logging.DEBUG)
+
 CONNECT_TIMEOUT = 0.1 #seconds
 READ_TIMEOUT = 0.1 #seconds
 
@@ -25,6 +29,7 @@ def is_cdn_fresh(cdn_url: str, arxiv_mtime:int) -> bool:
         return False
     last_mod = resp.headers.get('last-modified', '0')
     cdn_mtime = parsedate_to_datetime(last_mod)
+    log.debug("cdn_mtime %d arxiv_mtype %d", cdn_mtime.timestamp(), arxiv_mtime)
     return bool( cdn_mtime and cdn_mtime.timestamp() >= arxiv_mtime)
 
 

@@ -3,6 +3,8 @@ import math
 
 from pathlib import Path
 
+from time import perf_counter
+
 import logging
 
 log = logging.getLogger(__file__)
@@ -29,11 +31,12 @@ def _mtime_for_id(format: str, id:Identifier) -> int:
     if path.exists():
         return math.ceil(path.stat().st_mtime)
     else:
-        raise RuntimeError('File {path} does not exist')
+        raise RuntimeError(f'File {path} does not exist')
 
 def _reverse_proxy(url: str) -> Response:
     """Reverse proxy the URL to the client as a reponse."""
     resp = requests.get(url, stream=True)
+    log.debug("Reverse proxy to %s status %s", url, resp.status_code if resp else 'no-resp')
 
     # Need to exclude some headers otherwise they seem to have double
     # values when making the Reponse.
@@ -54,7 +57,8 @@ def _reverse_proxy(url: str) -> Response:
 
 def pdf(arxiv_id:str):  # type: ignore
     """Endpoint to download a PDF."""
-    log.debug("HERE!")
+    start = perf_counter()
+
     try:
         id = Identifier(arxiv_id)
     except IdentifierException:
@@ -68,15 +72,22 @@ def pdf(arxiv_id:str):  # type: ignore
     try:
         if _is_cdn_enabled():
             if not id.has_version:
+                start_load_v=perf_counter()
                 metadata = get_abs(arxiv_id)
                 id.has_version = True
                 id.version = metadata.highest_version()
+                log.debug('sec to load v: %f', perf_counter() - start_load_v)
 
             arxiv_mtime = _mtime_for_id(format, id)
             url = cdn_url(format, id)
+            log.debug('sec so far %f', perf_counter() - start)
 
-            if is_cdn_fresh(url, arxiv_mtime):
-                log.debug('CDN is fresh for url %s', url)
+            start_fresh = perf_counter()
+            fresh = is_cdn_fresh(url, arxiv_mtime)
+            log.debug('sec to check cdn %f', perf_counter() - start_fresh)
+
+            if fresh:
+                log.debug('CDN is fresh for url %s, total time: %f sec', url, perf_counter() - start)
                 return redirect(url, code=302)
             else:
                 log.debug('CDN was not fresh for url %s', url)
@@ -84,4 +95,5 @@ def pdf(arxiv_id:str):  # type: ignore
     except Exception as ex:
         log.warning("Problem while chekcing CDN for %s: %s", arxiv_id, ex)
 
+    log.debug("just before rev proxy %f sec total", perf_counter() - start)
     return _reverse_proxy(f"{_pdf_main_url()}/{arxiv_id}")
