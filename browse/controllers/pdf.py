@@ -4,6 +4,7 @@ import math
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from datetime import datetime
+import time
 import logging
 from typing import Optional, Callable
 import requests
@@ -29,10 +30,10 @@ PDF_ACTION = str
 
 
 def what_to_do(
-        file_mtime: Optional[datetime],
-        src_file_mtime: Optional[datetime],
+        file_mtime: Optional[float],
+        src_file_mtime: Optional[float],
         cdn_url: str,
-        cdn_mtime_fn: Callable[[str],Optional[datetime]],
+        cdn_mtime_fn: Callable[[str],Optional[float]],
         favor_cdn: bool =True) -> PDF_ACTION:
     """Gets action to do for state of affares for article.
 
@@ -83,7 +84,7 @@ def what_to_do(
         return 'SERVE_CDN'
 
 
-def get_cdn_mtime(url: str) -> Optional[datetime]:
+def get_cdn_mtime(url: str) -> Optional[float]:
     """Gets the last-modified time from the CDN.
 
     Parameters
@@ -102,7 +103,7 @@ def get_cdn_mtime(url: str) -> Optional[datetime]:
         return None
     else:
         last_mod = resp.headers.get('last-modified', '0')
-        return parsedate_to_datetime(last_mod)
+        return parsedate_to_datetime(last_mod).timestamp()
 
 
 def cdn_url(dltype: DL_TYPE, id: Identifier) -> str:
@@ -121,15 +122,14 @@ def _is_cdn_enabled() -> bool:
 def _pdf_main_url() -> str:
     return current_app.config.get('DOWNLOAD_FALLBACK_URL') # type: ignore
 
-
-def _mtime_for_id(format: str, id:Identifier) -> Optional[datetime]:
+def _mtime_for_id(format: str, id:Identifier) -> Optional[float]:
     path = Path(cache_file_path_for_id(id, format))
     if path.exists():
-        return datetime.fromtimestamp(math.ceil(path.stat().st_mtime))  # TODO tz=?)
+        return path.stat().st_mtime
     else:
         return None
 
-def _src_mtime_for_id(id: Identifier) -> Optional[datetime]:
+def _src_mtime_for_id(id: Identifier) -> Optional[float]:
     # TODO implement
     return None
 
