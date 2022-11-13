@@ -1,10 +1,7 @@
 """Handels download of PDFs."""
 
-import math
 from email.utils import parsedate_to_datetime
 from pathlib import Path
-from datetime import datetime
-import time
 import logging
 from typing import Optional, Callable
 import requests
@@ -35,19 +32,22 @@ def what_to_do(
         cdn_url: str,
         cdn_mtime_fn: Callable[[str],Optional[float]],
         favor_cdn: bool =True) -> PDF_ACTION:
-    """Gets action to do for state of affares for article.
+    """Gets action to do for state of affairs for article.
+
+    Times are handled as sec since epoch as floats which should avoid
+    timezone and 32bit epoch rollover problems.
 
     Parameters
     ----------
-    file_mtime : Optional[datetime]
+    file_mtime : Optional[float]
         mtime for article file. Must include tz. Pass `None` to
         indicate file does not exist.
-    src_file_mtime : Optional[datetime]
-        mtme for source file for article. Must include tz. Pass `None`
+    src_file_mtime : Optional[float]
+        mtime for source file for article. Unix Epoch. Pass `None`
         to indicate file does not exist.
     cdn_url : str
         URL for article in CDN
-    cdn_mtime_fn : Callable[[str],datetime]
+    cdn_mtime_fn : Callable[[str],float]
         Function to get mtime from CDN. Returns `None` to indicate the
         file is not available in the CDN.
     favor_cdn: bool
@@ -94,8 +94,8 @@ def get_cdn_mtime(url: str) -> Optional[float]:
 
     Returns
     -------
-    Optional[datetime]
-        last-modified of object in CDN. Must have a tz. None if the
+    Optional[float]
+        last-modified of object in CDN as Epoch. None if the
         GET request did not have a 200.
     """
     resp = requests.head(url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
@@ -117,7 +117,6 @@ def cdn_url(dltype: DL_TYPE, id: Identifier) -> str:
 
 def _is_cdn_enabled() -> bool:
     return bool(current_app.config.get('CDN_ENABLED'))
-
 
 def _pdf_main_url() -> str:
     return current_app.config.get('DOWNLOAD_FALLBACK_URL') # type: ignore
