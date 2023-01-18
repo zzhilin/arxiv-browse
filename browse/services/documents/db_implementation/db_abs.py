@@ -98,6 +98,24 @@ class DbDocMetadataService(DocMetadataService):
             is_latest=False)
         return combined_version
 
+
+    def _abs_for_version(self, identifier: Identifier,
+                         version: Optional[int] = None) -> DocMetadata:
+        """Get a specific version of a paper's abstract metadata.
+
+        if version is None then get the latest version."""
+        if version:
+            res = (Metadata.query
+                   .filter( Metadata.paper_id == identifier.id)
+                   .filter( Metadata.version == identifier.version )).first()                   
+        else:
+            res = (Metadata.query
+                   .filter(Metadata.paper_id == identifier.id)
+                   .filter(Metadata.is_current == 1)).first()
+        if not res:
+            raise AbsNotFoundException(identifier.id)
+        return to_docmeta(res)
+    
     def get_dissemination_formats(self,
                                   docmeta: DocMetadata,
                                   format_pref: Optional[str] = None,
