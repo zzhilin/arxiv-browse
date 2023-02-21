@@ -33,5 +33,5 @@ ENV LC_ALL en_US.utf8
 ENV LANG en_US.utf8
 ENV FLASK_APP /opt/arxiv/app.py
 
-EXPOSE 8000
+EXPOSE 8080
 CMD ["uwsgi", "--ini", "/opt/arxiv/uwsgi.ini"]
