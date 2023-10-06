@@ -75,25 +75,25 @@ def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
 
     local_files = []
     progress = WalkerReport()
-    for dirpath, dirnames, filenames in os.walk(doc_root):
+    for dirpath, dirnames, filenames in os.walk(doc_root, topdown=True):
         def dir_is_good(child_dirname):
             child_dirpath, canon_dirpath = canonicalize_filepath(doc_root, dirpath, child_dirname)
-            if ignore_spec.match_file(child_dirpath):
+            if ignore_spec.match_file(child_dirpath + "/") or ignore_spec.match_file(child_dirpath):
                 logging.debug(f"Skip {child_dirpath}")
                 return False
             return True
 
         dirnames = [dirname for dirname in dirnames if dir_is_good(dirname)]
 
+        skipped = 0
         with os.scandir(dirpath) as here:
             for something in here:
                 if not something.is_file():
                     continue
                 filepath, canon_path = canonicalize_filepath(doc_root, dirpath, something.name)
-                if visitor and visitor.skip_insert(canon_path):
-                    continue
-                if ignore_spec.match_file(filepath):
-                    logging.debug(f"Skip {canon_path}")
+                if visitor and visitor.skip_insert(canon_path) or ignore_spec.match_file(filepath):
+                    skipped += 1
+                    progress.fileop_progress_logging(len(local_files) + skipped)
                     continue
                 digested = None
                 fs_stat = something.stat()
@@ -108,7 +108,7 @@ def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
                 if visitor is not None:
                     visitor.insert(entry)
                     pass
-                progress.fileop_progress_logging(len(local_files))
+                progress.fileop_progress_logging(len(local_files) + skipped)
                 pass
             pass
         pass
