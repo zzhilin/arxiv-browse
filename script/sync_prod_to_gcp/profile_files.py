@@ -85,32 +85,30 @@ def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
 
         dirnames = [dirname for dirname in dirnames if dir_is_good(dirname)]
 
-        for filename in filenames:
-            filepath, canon_path = canonicalize_filepath(doc_root, dirpath, filename)
-            if visitor and visitor.skip_insert(canon_path):
-                continue
-            if ignore_spec.match_file(filepath):
-                logging.debug(f"Skip {canon_path}")
-                continue
-            try:
-                file_stat = os.stat(filepath)
-                # digested = digest_from_filepath(filepath)
+        with os.scandir(dirpath) as here:
+            for something in here:
+                if not something.is_file():
+                    continue
+                filepath, canon_path = canonicalize_filepath(doc_root, dirpath, something.name)
+                if visitor and visitor.skip_insert(canon_path):
+                    continue
+                if ignore_spec.match_file(filepath):
+                    logging.debug(f"Skip {canon_path}")
+                    continue
                 digested = None
+                fs_stat = something.stat()
+
                 entry = {
                     "filepath": canon_path,
                     "digest": digested,
-                    "size": file_stat.st_size,
-                    "mtime": get_file_mtime(filepath)
+                    "size": fs_stat.st_size,
+                    "mtime": fs_stat.st_mtime
                 }
                 local_files.append(entry)
-                if visitor:
+                if visitor is not None:
                     visitor.insert(entry)
                     pass
                 progress.fileop_progress_logging(len(local_files))
-                pass
-            except PermissionError:
-                pass
-            except IOError:
                 pass
             pass
         pass
