@@ -88,8 +88,12 @@ def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
         skipped = 0
         with os.scandir(dirpath) as here:
             for something in here:
-                if not something.is_file():
+                try:
+                    if not something.is_file():
+                        continue
+                except PermissionError:
                     continue
+                    pass
                 filepath, canon_path = canonicalize_filepath(doc_root, dirpath, something.name)
                 if visitor and visitor.skip_insert(canon_path) or ignore_spec.match_file(filepath):
                     skipped += 1
