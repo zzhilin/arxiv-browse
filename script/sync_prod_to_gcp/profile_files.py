@@ -25,14 +25,14 @@ class WalkerReport(object):
     def __init__(self):
         self.last_report = datetime.now()
         self.quiescent = timedelta(seconds=5)
-        self.report_format = "{} files visited."
+        self.report_format = "{} files total. {} files visited. {} files skipped. {}"
         pass
 
-    def fileop_progress_logging(self, n_files) -> None:
+    def fileop_progress_logging(self, n_files, n_skipped, dirpath) -> None:
         if (n_files % 1000) == 0:
             this_time = datetime.now()
             if this_time - self.last_report > self.quiescent:
-                logging.info(self.report_format.format(n_files))
+                logging.info(self.report_format.format(n_files+n_skipped, n_files, n_skipped, dirpath))
                 self.last_report = this_time
                 pass
             pass
@@ -95,6 +95,7 @@ def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
     ignore_spec = pathspec.GitIgnoreSpec.from_lines(ignores)
 
     local_files = []
+    skipped = 0
     progress = WalkerReport()
     thread_lock = threading.Lock()
 
@@ -106,17 +107,24 @@ def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
                 return False
             return True
 
-        dirnames = [dirname for dirname in dirnames if dir_is_good(dirname)]
+        for dirname in dirnames:
+            if not dir_is_good(dirname):
+                dirnames.remove(dirname)
+                pass
+            pass
 
-        skipped = 0
         with os.scandir(dirpath) as here:
             for something in here:
-                if not something.is_file():
+                try:
+                    if not something.is_file():
+                        continue
+                except PermissionError:
                     continue
+                    pass
                 filepath, canon_path = canonicalize_filepath(doc_root, dirpath, something.name)
-                if visitor and visitor.skip_insert(canon_path) or ignore_spec.match_file(filepath):
+                if ignore_spec.match_file(filepath) or (visitor and visitor.skip_insert(canon_path)):
                     skipped += 1
-                    progress.fileop_progress_logging(len(local_files) + skipped)
+                    progress.fileop_progress_logging(len(local_files), skipped, dirpath)
                     continue
                 digested = None
 
@@ -132,7 +140,7 @@ def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
                 if visitor is not None:
                     visitor.insert(entry)
                     pass
-                progress.fileop_progress_logging(len(local_files) + skipped)
+                progress.fileop_progress_logging(len(local_files), skipped, dirpath)
                 pass
             pass
         pass
