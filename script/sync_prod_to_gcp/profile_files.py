@@ -1,4 +1,5 @@
 import os
+import threading
 from typing import Callable, Optional, List
 import logging
 from datetime import datetime, timedelta, timezone
@@ -58,6 +59,26 @@ class Visitor(object):
     pass
 
 
+def do_stat(lock: threading.Lock, something: os.DirEntry, canon_path, local_files: List[dict], visitor):
+    fs_stat = something.stat()
+
+    lock.acquire()
+    entry = {
+        "filepath": canon_path,
+        "digest": None,
+        "size": fs_stat.st_size,
+        "mtime": fs_stat.st_mtime
+    }
+    local_files.append(entry)
+    if visitor is not None:
+        visitor.insert(entry)
+        pass
+    lock.release()
+    pass
+
+
+from multiprocessing.pool import ThreadPool
+
 def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
     ignore_file = os.path.join(doc_root, ".gitignore")
     if os.path.exists(ignore_file):
@@ -75,6 +96,8 @@ def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
 
     local_files = []
     progress = WalkerReport()
+    thread_lock = threading.Lock()
+
     for dirpath, dirnames, filenames in os.walk(doc_root, topdown=True):
         def dir_is_good(child_dirname):
             child_dirpath, canon_dirpath = canonicalize_filepath(doc_root, dirpath, child_dirname)
@@ -96,6 +119,7 @@ def walk_docs(doc_root: str, visitor: Visitor=None) -> List[dict]:
                     progress.fileop_progress_logging(len(local_files) + skipped)
                     continue
                 digested = None
+
                 fs_stat = something.stat()
 
                 entry = {

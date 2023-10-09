@@ -91,7 +91,6 @@ PDF_WAIT_SEC = 60 * 3
 """Maximum sec to wait for a PDF to be created"""
 
 todo_q: Queue = Queue()
-uploaded_q: Queue = Queue()  # number of files uploaded
 summary_q: Queue = Queue()
 
 RUN = True
