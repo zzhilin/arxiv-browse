@@ -74,16 +74,15 @@ REUPLOADS = {}
 ENSURE_UA = 'periodic-rebuild'
 
 ENSURE_HOSTS = [
-    # ('web2.arxiv.org', 40),
-    # ('web3.arxiv.org', 40),
-    # ('web4.arxiv.org', 40),
-    ('web5.arxiv.org', 8),
-    ('web6.arxiv.org', 8),
-    ('web7.arxiv.org', 8),
-    ('web8.arxiv.org', 8),
-    ('web9.arxiv.org', 8),
+    ('web5.arxiv.org', 4),
+    ('web6.arxiv.org', 4),
+    ('web7.arxiv.org', 4),
+    ('web8.arxiv.org', 4),
+    ('web9.arxiv.org', 4),
 ]
-"""Tuples of form HOST, THREADS_FOR_HOST"""
+"""Tuples of form HOST, THREADS_FOR_HOST
+
+This controls the number of concurrent /pdf requests sent to a web node."""
 
 ENSURE_CERT_VERIFY = False
 
