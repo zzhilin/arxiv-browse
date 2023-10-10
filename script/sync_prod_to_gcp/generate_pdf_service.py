@@ -2,7 +2,6 @@
 """
 import argparse
 import os.path
-import sys
 from pathlib import Path
 import requests
 import json
@@ -16,11 +15,13 @@ from identifier import Identifier
 from concurrent.futures import TimeoutError
 from google.cloud import pubsub_v1
 from sync_published_to_gcp import PS_CACHE_PREFIX, ENSURE_CERT_VERIFY, ArxivSyncJsonFormatter, LOG_FORMAT_KWARGS
+import signal
 
 
 logging.basicConfig(level=logging.WARNING, format='%(message)s (%(threadName)s)')
 logger = logging.getLogger("genpdf")
 logger.setLevel(logging.INFO)
+
 
 
 def pdf_cache_path(arxiv_id: Identifier) -> Path:
@@ -48,17 +49,18 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:
     arxiv_id = Identifier(ids)
     to_path = pdf_cache_path(arxiv_id)
     if os.path.exists(to_path):
+        logger.info(f"{to_path}: the pdf exists.")
         message.ack()
         return
 
     from_url = arxiv_pdf_url(HOST, arxiv_id)
     try:
-        resp = HTTP_SESSION.get(from_url, headers=HEADERS, stream=True, verify=ENSURE_CERT_VERIFY)
+        HTTP_SESSION.get(from_url, headers=HEADERS, stream=True, verify=ENSURE_CERT_VERIFY)
     except Exception as exc:
-        logger.info(f"{from_url}: nack")
-        message.nack()
+        logger.info(f"{from_url}/{to_path}: back off", exc_info=True)
         pass
-
+    logger.info(f"{from_url}/{to_path}: back off")
+    message.nack()
     pass
 
 
@@ -72,6 +74,13 @@ def main(host, gcp_project, sub_id):
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(gcp_project, sub_id)
     streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+
+    def handler_stop_signals(signum, frame):
+        streaming_pull_future.cancel()
+        pass
+
+    signal.signal(signal.SIGINT, handler_stop_signals)
+    signal.signal(signal.SIGTERM, handler_stop_signals)
 
     with subscriber:
         try:
