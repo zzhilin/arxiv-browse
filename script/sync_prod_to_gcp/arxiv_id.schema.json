@@ -1,0 +1,10 @@
+ {
+    "type": "record",
+    "name": "arxiv_id",
+    "fields": [
+        {
+            "name": "ids",
+            "type": "string"
+        }
+    ]
+}

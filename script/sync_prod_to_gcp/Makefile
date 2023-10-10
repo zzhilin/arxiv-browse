@@ -43,10 +43,11 @@ sync-to-gcp-queue: CURRENT_PROJECT := $(shell gcloud config get project)
 	[ ${CURRENT_PROJECT} = ${ARXIV_PROJECT_ID} ] || gcloud auth login --project ${ARXIV_PROJECT_ID} 
 	[ ${CURRENT_PROJECT} = ${ARXIV_PROJECT_ID} ] || gcloud config set project ${ARXIV_PROJECT_ID}
 	gcloud pubsub schemas create p2p --type avro --definition-file=p2p.schema --project ${ARXIV_PROJECT_ID}
+	gcloud pubsub schemas create arxiv_id --type avro --definition-file=arxiv_id.schema.json --project ${ARXIV_PROJECT_ID}
 	touch .schema-created
 
 sync-to-gcp-queue: .schema-created
-	-gcloud pubsub topics create ${PDF_GEN_TOPIC} --message-retention-duration=31d --message-encoding=json --project ${ARXIV_PROJECT_ID} --schema p2p
+	-gcloud pubsub topics create ${PDF_GEN_TOPIC} --message-retention-duration=31d --message-encoding=json --project ${ARXIV_PROJECT_ID} --schema arxiv_id
 	-gcloud pubsub topics create ${SYNC_TO_GCP_TOPIC} --message-retention-duration=31d --message-encoding=json --project ${ARXIV_PROJECT_ID} --schema p2p
 
 sync-to-gcp-sub: 

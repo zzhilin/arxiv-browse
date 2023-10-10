@@ -1,0 +1,22 @@
+{
+    "type": "record",
+    "name": "p2p",
+    "fields": [
+        {
+            "name": "service",
+            "type": "string"
+        },
+        {
+            "name": "from",
+            "type": "string"
+        },
+        {
+            "name": "to",
+            "type": "string"
+        },
+        {
+            "name": "meta",
+            "type": "string"
+        }
+    ]
+}

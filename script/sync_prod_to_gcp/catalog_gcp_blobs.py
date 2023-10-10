@@ -25,7 +25,7 @@ class BlobDb(object):
             self._add_entry_cursor = self.db.cursor()
         return self._add_entry_cursor
 
-    def add_entries(self, blobs: typing.List[storage.Blob]):
+    def add_entries(self, blobs: typing.List[STORAGE.Blob]):
         self.db.execute("begin")
         entries = [(blob.name, blob.size, get_mtime(blob), blob.md5_hash, blob.updated) for blob in blobs]
         self.add_entry_cursor.executemany("insert or replace into blobs (name, size, mtime, md5_hash, updated) values (?, ?, ?, ?, ?)", entries)
@@ -40,7 +40,7 @@ class BlobMap(object):
         self.blobs_db = self.gcp_env.open_db("blobs".encode('utf-8'))
         pass
 
-    def add_entries(self, blobs: typing.List[storage.Blob]):
+    def add_entries(self, blobs: typing.List[STORAGE.Blob]):
         with self.gcp_env.begin(write=True, db=self.blobs_db) as gcp:
             for blob in blobs:
                 def get_mtime(blob):
@@ -55,7 +55,7 @@ class BlobMap(object):
 
 def list_blobs_with_prefix(bucket_name, prefix):
     """Lists all the blobs in the bucket that begin with the prefix."""
-    storage_client: storage.Client = storage.Client.from_service_account_json(os.path.expanduser("~/.arxiv/arxiv-production-cred.json"))
+    storage_client: STORAGE.Client = STORAGE.Client.from_service_account_json(os.path.expanduser("~/.arxiv/arxiv-production-cred.json"))
     db = BlobDb()
     blobmap = BlobMap()
 
