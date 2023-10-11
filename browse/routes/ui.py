@@ -4,8 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Mapping, Tuple, Union, Optional
 from http import HTTPStatus as status
-import bcrypt
-import geoip2.database
 from arxiv import taxonomy
 from arxiv.base import logging
 from arxiv.base.urls.clickthrough import is_hash_valid
@@ -18,7 +16,6 @@ from flask import (
     render_template,
     request,
     send_file,
-    session,
     url_for,
 )
 from werkzeug.exceptions import BadRequest, InternalServerError, NotFound
@@ -72,6 +69,7 @@ def home() -> Response:
 
     raise InternalServerError("Unexpected error")
 
+
 @blueprint.route("/favicon.ico")
 @blueprint.route("/apple-touch-icon-120x120-precomposed.png")
 @blueprint.route("/apple-touch-icon-120x120.png")
@@ -79,6 +77,7 @@ def home() -> Response:
 def favicon() -> Response:
     """Send favicon."""
     return send_file(Path(current_app.root_path, "static/images/icons/favicon.ico"))
+
 
 @blueprint.route("abs", methods=["GET"])
 def bare_abs() -> Any:
@@ -133,16 +132,15 @@ def category_taxonomy() -> Any:
         None,
     )
 
+
 @blueprint.route("institutional_banner", methods=["GET"])
 def institutional_banner() -> Any:
-    try:
-        result = get_institution(request.remote_addr)
-        if result:
-            return (result, status.OK)
-        else:
-            return ("{}", status.OK)
-    except Exception as ex:
-        return ("", status.INTERNAL_SERVER_ERROR)
+    result = get_institution(request.remote_addr)
+    if result:
+        return (result, status.OK)
+    else:
+        return ("{}", status.OK)
+
 
 @blueprint.route("tb/", defaults={"arxiv_id": ""}, methods=["GET"])
 @blueprint.route("tb/<path:arxiv_id>", methods=["GET"])
@@ -203,10 +201,10 @@ def trackback(arxiv_id: str) -> Union[str, Response]:
 @blueprint.route("ct")
 def clickthrough() -> Response:
     """Generate redirect for clickthrough links."""
-    if 'url' in request.args and 'v' in request.args:
+    if "url" in request.args and "v" in request.args:
         sec = current_app.config["CLICKTHROUGH_SECRET"].get_secret_value()
-        if is_hash_valid(sec, request.args.get('url'), request.args.get('v')):
-            return redirect(request.args.get('url'))  # type: ignore
+        if is_hash_valid(sec, request.args.get("url"), request.args.get("v")):
+            return redirect(request.args.get("url"))  # type: ignore
         else:
             raise BadRequest("Bad click-through redirect")
 
@@ -214,8 +212,10 @@ def clickthrough() -> Response:
 
 
 @blueprint.route(
-    "list", defaults={"context": "", "subcontext": ""}, methods=["GET", "POST"],
-    strict_slashes=False
+    "list",
+    defaults={"context": "", "subcontext": ""},
+    methods=["GET", "POST"],
+    strict_slashes=False,
 )
 @blueprint.route("list/<context>/<subcontext>", methods=["GET", "POST"])
 def list_articles(context: str, subcontext: str) -> Response:
@@ -243,7 +243,6 @@ def main() -> Response:
     return render_template("stats/main.html", **response), code, headers  # type: ignore
 
 
-
 @blueprint.route("stats/today", methods=["GET"])
 def stats_today() -> Response:
     """Display statistics about today or a day."""
@@ -251,7 +250,9 @@ def stats_today() -> Response:
         date = str(request.args["date"])
     else:
         date = None
-    [response, code, headers] = stats_page.get_hourly_stats_page(current_app.config["ARXIV_BUSINESS_TZ"], date)
+    [response, code, headers] = stats_page.get_hourly_stats_page(
+        current_app.config["ARXIV_BUSINESS_TZ"], date
+    )
     return render_template("stats/today.html", **response), code, headers  # type: ignore
 
 
@@ -391,15 +392,15 @@ def cookies(set):  # type: ignore
     is_debug = request.args.get("debug", None) is not None
     if request.method == "POST":
         debug = {"debug": "1"} if is_debug else {}
-        resp = redirect(url_for("browse.cookies", **debug)) # type: ignore
+        resp = redirect(url_for("browse.cookies", **debug))  # type: ignore
         for ctoset in cookies_to_set(request):
-            resp.set_cookie(**ctoset) # type: ignore
+            resp.set_cookie(**ctoset)  # type: ignore
         return resp
     response, code, headers = get_cookies_page(is_debug)
     return render_template("cookies.html", **response), code, headers
 
 
-@blueprint.route('bibtex/<path:arxiv_id>', methods=['GET'])
+@blueprint.route("bibtex/<path:arxiv_id>", methods=["GET"])
 def bibtex(arxiv_id: str):  # type: ignore
     """BibTeX for a paper."""
     return bibtex_citation(arxiv_id)
@@ -412,26 +413,26 @@ def robots_txt() -> Response:
     return make_response("User-agent: * \nDisallow: /", 200)
 
 
-@blueprint.route('openurl-cookie', methods=['GET', 'POST'])
-def openurl_cookie (): # type: ignore
-    if request.method == 'POST':
-        resp = redirect(url_for('browse.openurl_cookie'))
+@blueprint.route("openurl-cookie", methods=["GET", "POST"])
+def openurl_cookie():  # type: ignore
+    if request.method == "POST":
+        resp = redirect(url_for("browse.openurl_cookie"))
         resp.set_cookie(**make_openurl_cookie())  # type: ignore
         return resp
     response, code, headers = get_openurl_page()
-    return render_template('openurl_cookies.html', **response), code, headers
+    return render_template("openurl_cookies.html", **response), code, headers
 
 
-@blueprint.route('a/<id>.<any("html", "json", "atom", "atom2"):ext>', methods=['GET'])
-@blueprint.route('a/<id>', defaults={'ext': None}, methods=['GET'])
-def a (id: str, ext: str):  # type: ignore
-    if ext is None and '.' in id:
+@blueprint.route('a/<id>.<any("html", "json", "atom", "atom2"):ext>', methods=["GET"])
+@blueprint.route("a/<id>", defaults={"ext": None}, methods=["GET"])
+def a(id: str, ext: str):  # type: ignore
+    if ext is None and "." in id:
         raise BadRequest
-    if ext == 'atom':
-        return Response(author.get_atom(id), content_type='application/atom+xml')
-    if ext == 'atom2':
-        return Response(author.get_atom2(id), mimetype='application/atom+xml')
-    if ext == 'json':
+    if ext == "atom":
+        return Response(author.get_atom(id), content_type="application/atom+xml")
+    if ext == "atom2":
+        return Response(author.get_atom2(id), mimetype="application/atom+xml")
+    if ext == "json":
         ajson = author.get_json(id)
         if ajson is not None:
             return ajson
@@ -439,4 +440,4 @@ def a (id: str, ext: str):  # type: ignore
             return make_response("", 404, {})
 
     response, code, headers = author.get_html_page(id)
-    return render_template('list/author.html', **response), code, headers
+    return render_template("list/author.html", **response), code, headers

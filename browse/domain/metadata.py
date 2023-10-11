@@ -1,5 +1,4 @@
 """Representations of arXiv document metadata."""
-import re
 from collections import abc
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -24,7 +23,7 @@ class Submitter:
     email: str
     """Email address."""
 
-    __slots__ = ['name', 'email']
+    __slots__ = ["name", "email"]
 
 
 @dataclass(frozen=True)
@@ -34,7 +33,7 @@ class AuthorList:
     raw: str
     """Raw author field string."""
 
-    __slots__ = ['raw']
+    __slots__ = ["raw"]
 
     def __str__(self) -> str:
         """Return the string representation of AuthorList."""
@@ -147,9 +146,9 @@ class DocMetadata:
         """Post-initialization checks if is_definitive is True."""
         if self.is_definitive:
             if self.categories is None:
-                raise ValueError('categories must be defined')
+                raise ValueError("categories must be defined")
             if self.primary_category is None:
-                raise ValueError('primary category must be defined')
+                raise ValueError("primary category must be defined")
 
     def get_browse_context_list(self) -> List[str]:
         """Get the list of archive/category IDs to generate browse context."""
@@ -159,18 +158,19 @@ class DocMetadata:
             else:
                 return []
 
-
         if self.primary_category:
             options = {
                 self.primary_category.id: True,
-                taxonomy.definitions.CATEGORIES[self.primary_category.id]['in_archive']: True
+                taxonomy.definitions.CATEGORIES[self.primary_category.id][
+                    "in_archive"
+                ]: True,
             }
         else:
             options = {}
 
         for category in self.secondary_categories:
             options[category.id] = True
-            in_archive = taxonomy.definitions.CATEGORIES[category.id]['in_archive']
+            in_archive = taxonomy.definitions.CATEGORIES[category.id]["in_archive"]
             options[in_archive] = True
         return sorted(options.keys())
 
@@ -185,11 +185,11 @@ class DocMetadata:
             return 1
         if not isinstance(self.version_history, abc.Iterable):
             raise ValueError(
-                f'version_history was not an Iterable for {self.arxiv_id_v}')
+                f"version_history was not an Iterable for {self.arxiv_id_v}"
+            )
         return max(map(lambda ve: ve.version, self.version_history))
 
-
-    def get_version(self, version:Optional[int] = None) -> Optional[VersionEntry]:
+    def get_version(self, version: Optional[int] = None) -> Optional[VersionEntry]:
         """Gets `VersionEntry` for `version`.
 
         Returns None if version does not exist."""
@@ -201,18 +201,17 @@ class DocMetadata:
 
         if version < 1:
             raise ValueError("Version must be > 1")
-        versions = list(
-            v for v in self.version_history if v.version == version)
+        versions = list(v for v in self.version_history if v.version == version)
         if len(versions) > 1:
             raise ValueError(
-                '{self.arxiv_id} version_history had more than one version {version}')
+                "{self.arxiv_id} version_history had more than one version {version}"
+            )
         if not versions:
             return None
         else:
             return versions[0]
 
-    def get_datetime_of_version(
-            self, version: Optional[int]) -> Optional[datetime]:
+    def get_datetime_of_version(self, version: Optional[int]) -> Optional[datetime]:
         """Returns python datetime of version.
 
         version: Version to get datetime of. Must be in range
@@ -221,11 +220,11 @@ class DocMetadata:
         if not version:
             version = self.highest_version()
 
-        versions = list(
-            v for v in self.version_history if v.version == version)
+        versions = list(v for v in self.version_history if v.version == version)
         if len(versions) > 1:
             raise ValueError(
-                '{self.arxiv_id} version_history had more than one version {version}')
+                "{self.arxiv_id} version_history had more than one version {version}"
+            )
         if not versions:
             return None
         else:
@@ -236,11 +235,12 @@ class DocMetadata:
         if not self.secondary_categories or not self.primary_category:
             return set()
 
-        def unalias(secs: Iterator[Category])->Iterator[Category]:
+        def unalias(secs: Iterator[Category]) -> Iterator[Category]:
             return map(lambda c: Category(c.unalias()), secs)
+
         prim = self.primary_category.unalias()
 
-        def de_prim(secs: Iterator[Category])->Iterator[Category]:
+        def de_prim(secs: Iterator[Category]) -> Iterator[Category]:
             return filter(lambda c: c.id != prim.id, secs)
 
         de_primaried = set(de_prim(unalias(iter(self.secondary_categories))))
@@ -254,6 +254,7 @@ class DocMetadata:
 
         def to_display(secs: List[Category]) -> List[str]:
             return list(map(lambda c: str(c.display), secs))
+
         return to_display(sorted(de_primaried))
 
     def canonical_url(self, no_version: bool = False) -> str:

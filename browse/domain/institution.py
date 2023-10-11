@@ -10,4 +10,4 @@ class Institution:
     name: Optional[str] = None
     """Name of the insitution."""
 
-    __slots__ = ['frozen']
+    __slots__ = ["frozen"]

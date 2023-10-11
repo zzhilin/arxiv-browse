@@ -20,8 +20,7 @@ logger = logging.getLogger(__name__)
 
 Response = Tuple[Dict[str, Any], int, Dict[str, Any]]
 
-RE_TOTAL_PAPERS = re.compile(r'^total_papers\s+(?P<count>[0-9]+)',
-                             re.MULTILINE)
+RE_TOTAL_PAPERS = re.compile(r"^total_papers\s+(?P<count>[0-9]+)", re.MULTILINE)
 
 
 def get_home_page() -> Response:
@@ -29,35 +28,34 @@ def get_home_page() -> Response:
     response_data: Dict[str, Any] = {}
     response_headers: Dict[str, Any] = {}
     try:
-        response_data['document_count'] = _get_document_count()
+        response_data["document_count"] = _get_document_count()
     except Exception as ex:
         raise InternalServerError from ex
 
-    response_data['groups'] = taxonomy.definitions.GROUPS
-    response_data['archives'] = taxonomy.definitions.ARCHIVES_ACTIVE
-    response_data['categories'] = taxonomy.definitions.CATEGORIES_ACTIVE
+    response_data["groups"] = taxonomy.definitions.GROUPS
+    response_data["archives"] = taxonomy.definitions.ARCHIVES_ACTIVE
+    response_data["categories"] = taxonomy.definitions.CATEGORIES_ACTIVE
 
     return response_data, status.OK, response_headers
 
 
 def _get_document_count() -> Optional[int]:
-
-    try: # check DB for document count first
+    try:  # check DB for document count first
         return get_document_count()  # type: ignore
     except Exception as ex:
-        logger.warning('Error getting document count from DB: %s', ex)
+        logger.warning("Error getting document count from DB: %s", ex)
 
-    try: # if DB is unavailable, fall back to legacy static file method
-        daily_stats_path = current_app.config['BROWSE_DAILY_STATS_PATH']
+    try:  # if DB is unavailable, fall back to legacy static file method
+        daily_stats_path = current_app.config["BROWSE_DAILY_STATS_PATH"]
         if daily_stats_path and os.path.isfile(daily_stats_path):
-            with open(daily_stats_path, mode='r') as statsf:
+            with open(daily_stats_path, mode="r") as statsf:
                 stats = statsf.read()
                 stats_match = RE_TOTAL_PAPERS.match(stats)
                 if stats_match:
-                    return int(stats_match.group('count'))
+                    return int(stats_match.group("count"))
         else:
             raise FileNotFoundError
     except (KeyError, FileNotFoundError):
-        logger.warning('Daily stats file not found')
+        logger.warning("Daily stats file not found")
 
     return None

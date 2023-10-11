@@ -9,7 +9,9 @@ PUBLISH_ISO_WEEKDAYS = [1, 2, 3, 4, 7]
 """Days of the week publish happens: Sunday-Thursday."""
 
 
-def guess_next_update_utc(arxiv_business_tz: ZoneInfo, dt: Optional[datetime] = None) -> Tuple[datetime, bool]:
+def guess_next_update_utc(
+    arxiv_business_tz: ZoneInfo, dt: Optional[datetime] = None
+) -> Tuple[datetime, bool]:
     """Make a sensible guess at earliest possible datetime of next update.
 
     Guess is based on provided datetime.
@@ -50,8 +52,10 @@ def guess_next_update_utc(arxiv_business_tz: ZoneInfo, dt: Optional[datetime] = 
     weekday = dt.isoweekday()
     if after_todays_publish:
         delta_to_next_publish = timedelta(days=1)
-        if dt < (possible_publish_dt + APPROX_PUBLISH_DURATION) \
-           and weekday in PUBLISH_ISO_WEEKDAYS:
+        if (
+            dt < (possible_publish_dt + APPROX_PUBLISH_DURATION)
+            and weekday in PUBLISH_ISO_WEEKDAYS
+        ):
             likely_in_publish = True
 
     if weekday == 4 and after_todays_publish:
@@ -71,11 +75,11 @@ def abs_expires_header(arxiv_business_tz: ZoneInfo) -> str:
     """Get the expires header key and value that should be used by abs."""
     (next_update_dt, likely_in_publish) = guess_next_update_utc(arxiv_business_tz)
     if likely_in_publish:
-        return '-1'
+        return "-1"
     else:
         return mime_header_date(next_update_dt)
 
 
 def mime_header_date(dt: datetime) -> str:
     """Convert a datetime to string in MIME date format (RFC 1123)."""
-    return dt.astimezone(tz=timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
+    return dt.astimezone(tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")

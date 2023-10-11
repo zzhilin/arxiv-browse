@@ -1,1 +1,1 @@
-"Service to get source of an item."""
+"Service to get source of an item." ""

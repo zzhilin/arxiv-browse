@@ -49,27 +49,26 @@ def get_prevnext(id: str, function: str, context: str) -> Response:
 
     """
     if id is None or not id:
-        raise BadRequest('Missing article identifier')
-    if function not in ['prev', 'next']:
-        raise BadRequest('Missing or invalid function request, should be prev or next')
+        raise BadRequest("Missing article identifier")
+    if function not in ["prev", "next"]:
+        raise BadRequest("Missing or invalid function request, should be prev or next")
     if context is None or not context:
-        raise BadRequest('Missing context')
-    if not (context in CATEGORIES_ACTIVE
-            or context in ARCHIVES or context == 'all'):
-        raise BadRequest('Invalid context')
+        raise BadRequest("Missing context")
+    if not (context in CATEGORIES_ACTIVE or context in ARCHIVES or context == "all"):
+        raise BadRequest("Invalid context")
 
     try:
         arxiv_id = Identifier(id)
     except IdentifierException as ex:
         raise BadRequest(escape(f"Invalid article identifier {id}")) from ex
 
-    seq_id = get_sequential_id(paper_id=arxiv_id,
-                               is_next=function == 'next',
-                               context=context)
+    seq_id = get_sequential_id(
+        paper_id=arxiv_id, is_next=function == "next", context=context
+    )
     if not seq_id:
         raise BadRequest(
-            escape(f'No {function} article found for '
-                   f'{arxiv_id.id} in {context}'))
+            escape(f"No {function} article found for " f"{arxiv_id.id} in {context}")
+        )
 
-    redirect_url = url_for('browse.abstract', arxiv_id=seq_id, context=context)
-    return {}, status.MOVED_PERMANENTLY, {'Location': redirect_url}
+    redirect_url = url_for("browse.abstract", arxiv_id=seq_id, context=context)
+    return {}, status.MOVED_PERMANENTLY, {"Location": redirect_url}

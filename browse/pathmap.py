@@ -19,9 +19,9 @@ app = create_web_app()
 
 def mappingline(rule):
     """For a bluprint rule it makes the LB mapping line for use with GCP path map."""
-    hasParam = '<' in rule.rule
+    hasParam = "<" in rule.rule
     if hasParam:
-        path = rule.rule.split('<')[0] + "*"
+        path = rule.rule.split("<")[0] + "*"
     else:
         path = rule.rule
 
@@ -30,4 +30,4 @@ def mappingline(rule):
 
 with app.app_context():
     lines = [mappingline(path) for path in app.url_map.iter_rules()]
-    print(','.join(lines))
+    print(",".join(lines))

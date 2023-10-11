@@ -1,11 +1,10 @@
 """Legacy DB backed core metadata service."""
 from dataclasses import replace
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 from zoneinfo import ZoneInfo
 
 import sqlalchemy
 from sqlalchemy.exc import DBAPIError, OperationalError
-from sqlalchemy.orm import Query
 from sqlalchemy.orm.exc import NoResultFound
 
 from browse.domain.identifier import Identifier
@@ -13,25 +12,24 @@ from browse.domain.metadata import DocMetadata
 from browse.domain.version import SourceType, VersionEntry
 from browse.services.database.models import Metadata
 from browse.services.documents.base_documents import (
-    AbsDeletedException, AbsNotFoundException, AbsVersionNotFoundException,
-    DocMetadataService)
+    AbsDeletedException,
+    AbsNotFoundException,
+    AbsVersionNotFoundException,
+    DocMetadataService,
+)
 from browse.services.documents.config.deleted_papers import DELETED_PAPERS
 from dateutil.tz import tzutc
 
-from ..format_codes import formats_from_source_type
 from .convert import to_docmeta
 
 
 class DbDocMetadataService(DocMetadataService):
     """Class for arXiv document metadata service."""
 
-
-    def __init__(self,
-                 db: sqlalchemy.engine.base.Engine,
-                 business_tz:str) -> None:
+    def __init__(self, db: sqlalchemy.engine.base.Engine, business_tz: str) -> None:
         """Initialize the DB document metadata service."""
         self.db = db
-        zz =  ZoneInfo(business_tz)
+        zz = ZoneInfo(business_tz)
         if zz is None:
             raise ValueError("Must pass a valid timzone")
         self.business_tz = zz
@@ -59,15 +57,13 @@ class DbDocMetadataService(DocMetadataService):
             raise AbsDeletedException(DELETED_PAPERS[paper_id.id])
 
         latest_version = self._abs_for_version(identifier=paper_id)
-        if not paper_id.has_version \
-           or paper_id.version == latest_version.version:
-            return replace(latest_version,
-                           is_definitive=True,
-                           is_latest=True)
+        if not paper_id.has_version or paper_id.version == latest_version.version:
+            return replace(latest_version, is_definitive=True, is_latest=True)
 
         try:
-            this_version = self._abs_for_version(identifier=paper_id,
-                                                 version=paper_id.version)
+            this_version = self._abs_for_version(
+                identifier=paper_id, version=paper_id.version
+            )
         except AbsNotFoundException as e:
             if paper_id.is_old_id:
                 raise
@@ -84,23 +80,28 @@ class DbDocMetadataService(DocMetadataService):
             primary_archive=latest_version.primary_archive,
             primary_group=latest_version.primary_group,
             is_definitive=True,
-            is_latest=False)
+            is_latest=False,
+        )
         return combined_version
 
-
-    def _abs_for_version(self, identifier: Identifier,
-                         version: Optional[int] = None) -> DocMetadata:
+    def _abs_for_version(
+        self, identifier: Identifier, version: Optional[int] = None
+    ) -> DocMetadata:
         """Get a specific version of a paper's abstract metadata.
 
         if version is None then get the latest version."""
         if version:
-            res = (Metadata.query
-                   .filter( Metadata.paper_id == identifier.id)
-                   .filter( Metadata.version == identifier.version )).first()
+            res = (
+                Metadata.query.filter(Metadata.paper_id == identifier.id).filter(
+                    Metadata.version == identifier.version
+                )
+            ).first()
         else:
-            res = (Metadata.query
-                   .filter(Metadata.paper_id == identifier.id)
-                   .filter(Metadata.is_current == 1)).first()
+            res = (
+                Metadata.query.filter(Metadata.paper_id == identifier.id).filter(
+                    Metadata.is_current == 1
+                )
+            ).first()
         if not res:
             raise AbsNotFoundException(identifier.id)
 
@@ -108,29 +109,29 @@ class DbDocMetadataService(DocMetadataService):
         # entry in database.
         version_history = list()
 
-        all_versions = (Metadata.query
-               .filter(Metadata.paper_id == identifier.id)
-               )
+        all_versions = Metadata.query.filter(Metadata.paper_id == identifier.id)
 
         for ver in all_versions:
-            size_kilobytes = int(ver.source_size / 1024 + .5)
+            size_kilobytes = int(ver.source_size / 1024 + 0.5)
             # Set UTC timezone
             created_tz = ver.created.replace(tzinfo=tzutc())
-            entry = VersionEntry(version=ver.version,
-                                 raw='fromdb-no-raw',
-                                 size_kilobytes=size_kilobytes,
-                                 submitted_date=created_tz,
-                                 source_type=SourceType(ver.source_format))
+            entry = VersionEntry(
+                version=ver.version,
+                raw="fromdb-no-raw",
+                size_kilobytes=size_kilobytes,
+                submitted_date=created_tz,
+                source_type=SourceType(ver.source_format),
+            )
             version_history.append(entry)
 
         return to_docmeta(res, version_history, self.business_tz)
 
-    def service_status(self)->List[str]:
+    def service_status(self) -> List[str]:
         try:
             res = Metadata.query.limit(1).first()
             if not res:
                 return [f"{__name__}: Nothing in arXiv_metadata table"]
-            if not hasattr(res, 'document_id'):
+            if not hasattr(res, "document_id"):
                 return [f"{__name__}: arXiv_metadata lacks document_id"]
         except NoResultFound:
             return [f"{__name__}: No Metadata rows found in db"]

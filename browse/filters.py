@@ -2,7 +2,6 @@
 import html
 import re
 from typing import Union
-import html
 
 from markupsafe import Markup
 
@@ -30,15 +29,15 @@ def entity_to_utf(text: str) -> str:
     It tries to avoid junk like <script> but it is a bad idea.
     This MUST NEVER BE USED ON USER PROVIDED INPUT. Submission titles etc.
     """
-    if hasattr(text, '__html__'):
+    if hasattr(text, "__html__"):
         return text
 
-    without_lt = re.sub('<', 'XXX_LESS_THAN_XXX', text)
-    without_lt_gt = re.sub('>', 'XXX_GREATER_THAN_XXX', without_lt)
+    without_lt = re.sub("<", "XXX_LESS_THAN_XXX", text)
+    without_lt_gt = re.sub(">", "XXX_GREATER_THAN_XXX", without_lt)
 
     unes = html.unescape(without_lt_gt)
 
-    with_lt = re.sub('XXX_LESS_THAN_XXX', '&lt;', unes)
-    with_lt_gt = re.sub('XXX_GREATER_THAN_XXX', '&gt;', with_lt)
+    with_lt = re.sub("XXX_LESS_THAN_XXX", "&lt;", unes)
+    with_lt_gt = re.sub("XXX_GREATER_THAN_XXX", "&gt;", with_lt)
 
     return Markup(with_lt_gt)

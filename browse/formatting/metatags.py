@@ -33,7 +33,6 @@ def meta_tag_metadata(metadata: DocMetadata, truncate: bool = False) -> List:
         meta_tags.append(_mtag("citation_title", metadata.title))
 
     if metadata.authors:
-
         authors_list = (
             parse_author_affil_utf(metadata.authors.raw)[:100]
             if truncate
@@ -75,8 +74,8 @@ def meta_tag_metadata(metadata: DocMetadata, truncate: bool = False) -> List:
     if cod:
         meta_tags.append(_mtag("citation_online_date", cod))
 
-    pdfurl=url_for("dissemination.pdf", arxiv_id=metadata.arxiv_id, _external=True)
-    meta_tags.append(_mtag("citation_pdf_url",pdfurl))
+    pdfurl = url_for("dissemination.pdf", arxiv_id=metadata.arxiv_id, _external=True)
+    meta_tags.append(_mtag("citation_pdf_url", pdfurl))
 
     meta_tags.append(_mtag("citation_arxiv_id", str(metadata.arxiv_id)))
     meta_tags.append(_mtag("citation_abstract", str(metadata.abstract)))

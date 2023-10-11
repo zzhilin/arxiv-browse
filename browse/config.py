@@ -7,7 +7,7 @@ import os
 from secrets import token_hex
 import warnings
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 import logging
 
 from pydantic import SecretStr, PyObject, BaseSettings
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 
 DEFAULT_DB = "sqlite:///../tests/data/browse.db"
-TESTING_LATEXML_DB = 'sqlite:///../tests/data/latexmldb.db'
+TESTING_LATEXML_DB = "sqlite:///../tests/data/latexmldb.db"
 
 
 class Settings(BaseSettings):
@@ -45,19 +45,19 @@ class Settings(BaseSettings):
     LATEXML_ENABLED: bool = False
     """Sets if LATEXML is enabled or not"""
 
-    LATEXML_BASE_URL: str = ''
+    LATEXML_BASE_URL: str = ""
     """Base GS bucket URL to find the HTML."""
 
-    LATEXML_DB_USER: str = ''
+    LATEXML_DB_USER: str = ""
     """DB username for latexml DB."""
 
-    LATEXML_DB_PASS: str = ''
+    LATEXML_DB_PASS: str = ""
     """DB password for latexml DB."""
 
-    LATEXML_DB_NAME: str = ''
+    LATEXML_DB_NAME: str = ""
     """DB name for latexml DB."""
 
-    LATEXML_INSTANCE_CONNECTION_NAME: str = ''
+    LATEXML_INSTANCE_CONNECTION_NAME: str = ""
     """GCP instance connection name of managed DB.
     ex. arxiv-xyz:us-central1:my-special-db
 
@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     the latexml db. See
     https://cloud.google.com/sql/docs/postgres/connect-connectors#python_1"""
 
-    LATEXML_IP_TYPE: str = 'PUBLIC_IP'
+    LATEXML_IP_TYPE: str = "PUBLIC_IP"
     """If the GCP connection is public or private"""
 
     SQLALCHEMY_BINDS: Dict[str, Any] = {}
@@ -97,20 +97,28 @@ class Settings(BaseSettings):
 
     BROWSE_SITE_LABEL: str = "arXiv.org"
 
-    BROWSE_ANALYTICS_ENABLED: bool = bool(int(os.environ.get("BROWSE_ANALYTICS_ENABLED", "0")))
+    BROWSE_ANALYTICS_ENABLED: bool = bool(
+        int(os.environ.get("BROWSE_ANALYTICS_ENABLED", "0"))
+    )
     """Enable/disable web analytics, ie: Pendo, Piwik, geoip."""
 
-    BROWSE_USER_BANNER_ENABLED: bool = bool(int(os.environ.get("BROWSE_USER_BANNER_ENABLED", "0")))
+    BROWSE_USER_BANNER_ENABLED: bool = bool(
+        int(os.environ.get("BROWSE_USER_BANNER_ENABLED", "0"))
+    )
     """Enable/disable the user banner, the full width one, above the Cornell logo."""
 
-    BROWSE_MINIMAL_BANNER_ENABLED: bool = bool(int(os.environ.get("BROWSE_MINIMAL_BANNER_ENABLED", "0")))
+    BROWSE_MINIMAL_BANNER_ENABLED: bool = bool(
+        int(os.environ.get("BROWSE_MINIMAL_BANNER_ENABLED", "0"))
+    )
     """Enable/disable the banner to the right of the Cornell logo, before the donate button."""
 
-    BROWSE_SPECIAL_MESSAGE_ENABLED: bool = bool(int(os.environ.get("BROWSE_SPECIAL_MESSAGE_ENABLED", "0")))
+    BROWSE_SPECIAL_MESSAGE_ENABLED: bool = bool(
+        int(os.environ.get("BROWSE_SPECIAL_MESSAGE_ENABLED", "0"))
+    )
     """Enable/disable the cloud list item, in the arXiv News section, in home/special-message.html"""
 
-    ############################## Services ##############################
-    DOCUMENT_LISTING_SERVICE: PyObject = 'browse.services.listing.fs_listing'  # type: ignore
+    # ############################# Services ##############################
+    DOCUMENT_LISTING_SERVICE: PyObject = "browse.services.listing.fs_listing"  # type: ignore
     """What implementation to use for the listing service.
 
     Accepted values are
@@ -121,14 +129,13 @@ class Settings(BaseSettings):
     - `browse.services.listing.fake`: A totally fake set of listings for testing.
     """
 
-    DOCUMENT_LISTING_PATH: str = 'tests/data/abs_files/ftp'
+    DOCUMENT_LISTING_PATH: str = "tests/data/abs_files/ftp"
     """Path to get listing files from.
 
     This can start with gs:// to use Google Storage.
     Ex gs://arxiv-production-data/ftp."""
 
-
-    DOCUMENT_ABSTRACT_SERVICE: PyObject = 'browse.services.documents.fs_docs'  # type: ignore
+    DOCUMENT_ABSTRACT_SERVICE: PyObject = "browse.services.documents.fs_docs"  # type: ignore
     """Implementation to use for abstracts.
 
     Accepted values are:
@@ -148,16 +155,15 @@ class Settings(BaseSettings):
         This can start with gs:// to use Google Storage.
     """
 
-    DOCUMENT_CACHE_PATH: str =  "tests/data/cache"
+    DOCUMENT_CACHE_PATH: str = "tests/data/cache"
     """Path to cache directory"""
 
-    PREV_NEXT_SERVICE: PyObject = 'browse.services.prevnext.fsprevnext'  # type: ignore
+    PREV_NEXT_SERVICE: PyObject = "browse.services.prevnext.fsprevnext"  # type: ignore
     """Implementation of the prev/next service used for those features on the abs page.
 
     Currently the only value is `browse.services.prevnext.fsprevnext` This uses
        DOCUMENT_LATEST_VERSIONS_PATH and DOCUMENT_ORIGNAL_VERSIONS_PATH.
     """
-
 
     DISSEMINATION_STORAGE_PREFIX: str = "./tests/data/abs_files/"
     """Storage prefix to use. Ex gs://arxiv-production-data
@@ -169,7 +175,7 @@ class Settings(BaseSettings):
     `./testing/data/` for testing data. Must end with a /
     """
 
-    ######################### End of Services ###########################
+    # ######################## End of Services ###########################
 
     SHOW_EMAIL_SECRET: SecretStr = SecretStr(token_hex(10))
     """Used in linking to /show-email.
@@ -204,7 +210,7 @@ class Settings(BaseSettings):
     CLASSIC_SESSION_HASH: SecretStr = SecretStr(token_hex(10))
     SESSION_DURATION: int = 36000
 
-    ARXIV_BUSINESS_TZ: str = 'US/Eastern'
+    ARXIV_BUSINESS_TZ: str = "US/Eastern"
     """
     Timezone of the arxiv business offices.
     """
@@ -234,7 +240,6 @@ class Settings(BaseSettings):
     automatically. By default the value is None which means that Flask checks
     original file only in debug mode.
     """
-
 
     SECRET_KEY: str = "qwert2345"
 
@@ -388,38 +393,47 @@ class Settings(BaseSettings):
         """Additional pydantic config of these settings."""
 
         fields = {
-            'SQLALCHEMY_DATABASE_URI': {
-                'env': ['BROWSE_SQLALCHEMY_DATABASE_URI', 'CLASSIC_DATABASE_URI']
+            "SQLALCHEMY_DATABASE_URI": {
+                "env": ["BROWSE_SQLALCHEMY_DATABASE_URI", "CLASSIC_DATABASE_URI"]
             }
         }
 
     def check(self) -> None:
         """A check and fix up of a settings object."""
-        if 'sqlite' in self.SQLALCHEMY_DATABASE_URI:
+        if "sqlite" in self.SQLALCHEMY_DATABASE_URI:
             if not self.TESTING:
                 log.warning(f"using SQLite DB at {self.SQLALCHEMY_DATABASE_URI}")
             self.SQLALCHEMY_MAX_OVERFLOW = None
             self.SQLALCHEMY_POOL_SIZE = None
 
-        if (os.environ.get("FLASK_ENV", False) == "production"
-                and "sqlite" in self.SQLALCHEMY_DATABASE_URI):
+        if (
+            os.environ.get("FLASK_ENV", False) == "production"
+            and "sqlite" in self.SQLALCHEMY_DATABASE_URI
+        ):
             warnings.warn(
                 "Using sqlite in BROWSE_SQLALCHEMY_DATABASE_URI in production environment"
             )
 
-        if self.DOCUMENT_ORIGNAL_VERSIONS_PATH.startswith("gs://") and \
-           self.DOCUMENT_LATEST_VERSIONS_PATH.startswith("gs://"):
-           self.FS_TZ = "UTC"
-           log.warning("Switching FS_TZ to UTC since DOCUMENT_LATEST_VERSIONS_PATH "
-                       "and DOCUMENT_ORIGINAL_VERSIONS_PATH are Google Storage")
-           if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', ''):
-               log.warning("GOOGLE_APPLICATION_CREDENTIALS is set")
-           else:
-               log.warning("GOOGLE_APPLICATION_CREDENTIALS is not set")
+        if self.DOCUMENT_ORIGNAL_VERSIONS_PATH.startswith(
+            "gs://"
+        ) and self.DOCUMENT_LATEST_VERSIONS_PATH.startswith("gs://"):
+            self.FS_TZ = "UTC"
+            log.warning(
+                "Switching FS_TZ to UTC since DOCUMENT_LATEST_VERSIONS_PATH "
+                "and DOCUMENT_ORIGINAL_VERSIONS_PATH are Google Storage"
+            )
+            if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", ""):
+                log.warning("GOOGLE_APPLICATION_CREDENTIALS is set")
+            else:
+                log.warning("GOOGLE_APPLICATION_CREDENTIALS is not set")
 
-        if ("fs_docs" in str(type(self.DOCUMENT_ABSTRACT_SERVICE)) and
-            "fs_listing" in str(type(self.DOCUMENT_LISTING_PATH)) and
-            self.DOCUMENT_LATEST_VERSIONS_PATH != self.DOCUMENT_LISTING_PATH):
-            log.warning(f"Unexpected: using FS listings and abs sevice but FS don't match. "
-                        "latest abs at {self.DOCUMENT_LATEST_VERSIONS_PATH} "
-                        f"but listings at {self.DOCUMENT_LISTING_PATH}")
+        if (
+            "fs_docs" in str(type(self.DOCUMENT_ABSTRACT_SERVICE))
+            and "fs_listing" in str(type(self.DOCUMENT_LISTING_PATH))
+            and self.DOCUMENT_LATEST_VERSIONS_PATH != self.DOCUMENT_LISTING_PATH
+        ):
+            log.warning(
+                f"Unexpected: using FS listings and abs sevice but FS don't match. "
+                "latest abs at {self.DOCUMENT_LATEST_VERSIONS_PATH} "
+                f"but listings at {self.DOCUMENT_LISTING_PATH}"
+            )

@@ -25,6 +25,7 @@ def get_listing_service() -> "ListingService":
 def fs_listing(config: dict, _: Any) -> "ListingService":
     """Factory function for filesystem-based listing service."""
     from .fs_listings import FsListingFilesService
+
     return FsListingFilesService(config["DOCUMENT_LISTING_PATH"])
 
 
@@ -32,6 +33,7 @@ def db_listing(config: dict, _: Any) -> "ListingService":
     """Factory function for DB backed listing service."""
     from browse.services.database import models
     from .db_listing_impl import DBListingService
+
     # maybe pass in the specific classes for the tables we need?
     return DBListingService(models.db)
 
@@ -39,12 +41,12 @@ def db_listing(config: dict, _: Any) -> "ListingService":
 def fake(config: Any, _: Any) -> "ListingService":
     """Factory function for fake listing service."""
     from .fake_listings import FakeListingFilesService
+
     return FakeListingFilesService()
 
 
 AnnounceTypes = Literal["new", "cross", "rep"]
 """The types that announces can be in the listings."""
-
 
 
 class ListingItem:
@@ -59,10 +61,13 @@ class ListingItem:
     primary is the primary category of the article.
     """
 
-    def __init__(self, id: str,
-                 listingType: AnnounceTypes,
-                 primary: str,
-                 article: Optional[DocMetadata] = None):
+    def __init__(
+        self,
+        id: str,
+        listingType: AnnounceTypes,
+        primary: str,
+        article: Optional[DocMetadata] = None,
+    ):
         self.id = id
         self.listingType = listingType
         self.primary = primary
@@ -257,13 +262,11 @@ class ListingService(ABC, HasStatus):
         """Gets monthly listing counts for the year."""
 
 
-
-
 def gen_expires() -> str:
     """Generate expires in RFC 1123 format.
 
-       What is optimal value for the expires value? Next publish?
-       RFC 1123 format ex 'Wed, 21 Oct 2015 07:28:00 GMT'
+    What is optimal value for the expires value? Next publish?
+    RFC 1123 format ex 'Wed, 21 Oct 2015 07:28:00 GMT'
     """
     now = datetime.now()
     future = timedelta(days=1)

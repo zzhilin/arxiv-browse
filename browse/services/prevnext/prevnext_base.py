@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from browse.services import HasStatus
 from browse.domain.identifier import Identifier
 
+
 @dataclass
 class PrevNextResult:
     """Result for prevnext service."""
@@ -33,4 +34,3 @@ class PrevNextService(abc.ABC, HasStatus):
         """Get the previous and next ids for a given id.
 
         Returning None means the controller"""
-

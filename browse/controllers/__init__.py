@@ -34,13 +34,12 @@ def check_supplied_identifier(id: Identifier, route: str) -> Optional[Response]:
 
     arxiv_id = id.idv if id.has_version else id.id
     redirect_url: str = url_for(route, arxiv_id=arxiv_id)
-    return {},\
-        status.MOVED_PERMANENTLY,\
-        {'Location': redirect_url}
-
+    return {}, status.MOVED_PERMANENTLY, {"Location": redirect_url}
 
 
 _arxiv_biz_tz = None
+
+
 def biz_tz() -> ZoneInfo:
     global _arxiv_biz_tz
     if _arxiv_biz_tz is None:

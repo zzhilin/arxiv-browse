@@ -10,21 +10,21 @@ from browse.domain.metadata import DocMetadata
 
 start_of_time = date(1900, 1, 1)
 INSPIRE_REF_CIT_CATEGORIES = {
-    'hep-th': start_of_time,
-    'hep-lat': start_of_time,
-    'hep-ph': start_of_time,
-    'hep-ex': start_of_time,
-    'gr-qc': start_of_time,
-    'quant-ph': start_of_time,
-    'astro-ph': start_of_time,
-    'nucl-th': start_of_time,
-    'nucl-ex': start_of_time,
-    'acc-phys': start_of_time,
-    'physics.acc-ph': start_of_time,
-    'astro-ph.CO': date(2013, 1, 1),
-    'astro-ph.HE': date(2013, 1, 1),
-    'physics.data-an': date(2013, 1, 1),
-    'physics.ins-det': date(2013, 1, 1)
+    "hep-th": start_of_time,
+    "hep-lat": start_of_time,
+    "hep-ph": start_of_time,
+    "hep-ex": start_of_time,
+    "gr-qc": start_of_time,
+    "quant-ph": start_of_time,
+    "astro-ph": start_of_time,
+    "nucl-th": start_of_time,
+    "nucl-ex": start_of_time,
+    "acc-phys": start_of_time,
+    "physics.acc-ph": start_of_time,
+    "astro-ph.CO": date(2013, 1, 1),
+    "astro-ph.HE": date(2013, 1, 1),
+    "physics.data-an": date(2013, 1, 1),
+    "physics.ins-det": date(2013, 1, 1),
 }
 """
 This specifies which categories/archives should have INSPIRE reference and
@@ -37,10 +37,10 @@ categories a case-by-case basis, but as of 2014-03 there is no attempt
 in the arXiv system to handle these (see also ARXIVDEV-2089).
 """
 
-DBLP_BASE_URL = 'https://dblp.uni-trier.de'
-DBLP_BIBTEX_PATH = '/rec/bibtex'
-DBLP_AUTHOR_SEARCH_PATH = '/search/author'
-DBLP_ARCHIVES = ['cs', 'cmp-lg']
+DBLP_BASE_URL = "https://dblp.uni-trier.de"
+DBLP_BIBTEX_PATH = "/rec/bibtex"
+DBLP_AUTHOR_SEARCH_PATH = "/search/author"
+DBLP_ARCHIVES = ["cs", "cmp-lg"]
 DBLP_START_DATE = date(2005, 1, 1)
 """
 Config params for the DBLP Bibliography service for Computer Science papers.
@@ -58,13 +58,13 @@ def get_orig_publish_date(ident: Identifier) -> Optional[date]:
         return None
 
 
-def inspire_category(category: Category,
-                     orig_publish_date: date)-> bool:
+def inspire_category(category: Category, orig_publish_date: date) -> bool:
     """Get if inspire is in effect for category and date."""
-    return bool(category and
-                category.id in INSPIRE_REF_CIT_CATEGORIES
-                and orig_publish_date >=
-                INSPIRE_REF_CIT_CATEGORIES[category.id])
+    return bool(
+        category
+        and category.id in INSPIRE_REF_CIT_CATEGORIES
+        and orig_publish_date >= INSPIRE_REF_CIT_CATEGORIES[category.id]
+    )
 
 
 def include_inspire_link(docmeta: DocMetadata) -> bool:
@@ -73,13 +73,13 @@ def include_inspire_link(docmeta: DocMetadata) -> bool:
     if not orig_publish_date:
         return False
 
-    if docmeta.primary_category and inspire_category(docmeta.primary_category,
-                                                     orig_publish_date):
+    if docmeta.primary_category and inspire_category(
+        docmeta.primary_category, orig_publish_date
+    ):
         return True
 
     cats = docmeta.secondary_categories
-    return len([cat for cat in cats
-                if inspire_category(cat, orig_publish_date)]) > 0
+    return len([cat for cat in cats if inspire_category(cat, orig_publish_date)]) > 0
 
 
 def include_dblp_section(docmeta: DocMetadata) -> bool:
@@ -100,13 +100,13 @@ def include_dblp_section(docmeta: DocMetadata) -> bool:
 def get_dblp_bibtex_path(url: str) -> Optional[str]:
     """Get the end of the DBLP BibTeX URL path based on the listing path."""
     try:
-        (response_type, dblp_id) = url.split('#')
-        type_match = re.search(r'(\/journals\/|conf\/[^/]+)', response_type)
+        (response_type, dblp_id) = url.split("#")
+        type_match = re.search(r"(\/journals\/|conf\/[^/]+)", response_type)
         if type_match:
-            if re.search('journals', type_match.group(0)):
-                return f'journals/corr/{dblp_id}'
+            if re.search("journals", type_match.group(0)):
+                return f"journals/corr/{dblp_id}"
             else:
-                return f'{type_match.group(0)}/{dblp_id}'
+                return f"{type_match.group(0)}/{dblp_id}"
         else:
             return None
     except ValueError:
@@ -121,10 +121,10 @@ def get_computed_dblp_listing_path(docmeta: DocMetadata) -> Optional[str]:
         return None
     if orig_publish_date >= DBLP_START_DATE and identifier.id is not None:
         if identifier.is_old_id:
-            dblp_id = f'abs-cs-{identifier.filename}'
+            dblp_id = f"abs-cs-{identifier.filename}"
         else:
-            dashed_id = identifier.id.replace('.', '-', 1)
-            dblp_id = f'abs-{dashed_id}'
-        return f'db/journals/corr/corr{identifier.yymm}.html#{dblp_id}'
+            dashed_id = identifier.id.replace(".", "-", 1)
+            dblp_id = f"abs-{dashed_id}"
+        return f"db/journals/corr/corr{identifier.yymm}.html#{dblp_id}"
     else:
         return None

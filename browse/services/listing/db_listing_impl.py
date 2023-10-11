@@ -4,12 +4,17 @@ from itertools import groupby
 from typing import Any, List, Optional, Tuple, Union
 
 from arxiv.taxonomy import ARCHIVES
-from browse.services.database.models import (Document, DocumentCategory,
-                                             NextMail, db)
-from browse.services.listing import (Listing, ListingCountResponse,
-                                     ListingItem, ListingNew,
-                                     ListingService, MonthCount,
-                                     NotModifiedResponse, gen_expires)
+from browse.services.database.models import Document, DocumentCategory, NextMail, db
+from browse.services.listing import (
+    Listing,
+    ListingCountResponse,
+    ListingItem,
+    ListingNew,
+    ListingService,
+    MonthCount,
+    NotModifiedResponse,
+    gen_expires,
+)
 from sqlalchemy import func, text
 
 """
@@ -37,17 +42,15 @@ class DBListingService(ListingService):
 
     def __init__(self, db: Any) -> None:
         """Initialize the DB listing service."""
-        self.db=db
-
+        self.db = db
 
     def _latest_mail(self) -> str:
         """Latest mailing day in YYMMDD format from NextMail.mail_id"""
-        #TODO add some sort of caching based on publish time
+        # TODO add some sort of caching based on publish time
         return str(self.db.session.query(func.max(NextMail.mail_id)).first()[0])
 
-
-    def _year_to_yy(self, year:int)-> str:
-        if year<0:
+    def _year_to_yy(self, year: int) -> str:
+        if year < 0:
             raise ValueError("year must be positive")
         if year >= 2000:
             year = year - 2000
@@ -56,104 +59,103 @@ class DBListingService(ListingService):
 
         return f"{year:02}"
 
-    def _query_yymm(self,
-                    archiveOrCategory: str,
-                    year: int,
-                    month: Optional[int]=None) -> Any:
+    def _query_yymm(
+        self, archiveOrCategory: str, year: int, month: Optional[int] = None
+    ) -> Any:
         yy = self._year_to_yy(year)
         mq = f"{month:02}" if month else ""
         return self._query_base(archiveOrCategory, f"{yy}{mq}%")
 
-
-    def _query_base(self,
-                    archiveOrCategory: str,
-                    mail_id: Optional[str]=None) -> Any:
+    def _query_base(self, archiveOrCategory: str, mail_id: Optional[str] = None) -> Any:
         query = NextMail.query
-        query = query.join(Document, NextMail.document_id==Document.document_id)
-        query = query.join(DocumentCategory,
-                           Document.document_id==DocumentCategory.document_id)
+        query = query.join(Document, NextMail.document_id == Document.document_id)
+        query = query.join(
+            DocumentCategory, Document.document_id == DocumentCategory.document_id
+        )
         if archiveOrCategory in ARCHIVES.keys():
             # TODO There is probably a better way to do archives
             query = query.filter(
-                DocumentCategory.category.ilike(f'{archiveOrCategory}%'))
+                DocumentCategory.category.ilike(f"{archiveOrCategory}%")
+            )
         else:
             query = query.filter(DocumentCategory.category == archiveOrCategory)
 
-        if mail_id and '%' in mail_id:
+        if mail_id and "%" in mail_id:
             query = query.filter(NextMail.mail_id.like(mail_id))
         elif mail_id:
             query = query.filter(NextMail.mail_id == mail_id)
 
         return query
 
-
-    def list_articles_by_year(self,
-                              archiveOrCategory: str,
-                              year: int,
-                              skip: int,
-                              show: int,
-                              if_modified_since: Optional[str] = None) -> Listing:
+    def list_articles_by_year(
+        self,
+        archiveOrCategory: str,
+        year: int,
+        skip: int,
+        show: int,
+        if_modified_since: Optional[str] = None,
+    ) -> Listing:
         """Get listings by year."""
         query = self._query_yymm(archiveOrCategory, year)
         res = _add_skipshow(query, skip, show).all()
         count = self._query_yymm(archiveOrCategory, year).count()
         return _to_listings(list(res), count)
 
-
-    def list_articles_by_month(self,
-                               archiveOrCategory: str,
-                               year: int,
-                               month: int,
-                               skip: int,
-                               show: int,
-                               if_modified_since: Optional[str] = None) -> Listing:
+    def list_articles_by_month(
+        self,
+        archiveOrCategory: str,
+        year: int,
+        month: int,
+        skip: int,
+        show: int,
+        if_modified_since: Optional[str] = None,
+    ) -> Listing:
         """Get listings for a month."""
         query = self._query_yymm(archiveOrCategory, year, month)
         res = _add_skipshow(query, skip, show).all()
         count = self._query_yymm(archiveOrCategory, year, month).count()
         return _to_listings(res, count)
 
-
-    def list_new_articles(self,
-                          archiveOrCategory: str,
-                          skip: int,
-                          show: int,
-                          if_modified_since: Optional[str] = None) -> ListingNew:
+    def list_new_articles(
+        self,
+        archiveOrCategory: str,
+        skip: int,
+        show: int,
+        if_modified_since: Optional[str] = None,
+    ) -> ListingNew:
         """Gets listings for the most recent announcement/publish."""
         latest_mail = self._latest_mail()
         query = self._query_base(archiveOrCategory, latest_mail)
         res = _add_skipshow(query, skip, show).all()
-        count = self._query_base(archiveOrCategory, latest_mail).count()
         # TODO crosses
-        new=list(map(_nextmail_to_listing, res))
-        return ListingNew(listings=new,
-                          announced=datetime.date(2007, 4, 1), # TODO
-                          submitted= (datetime.date(2007, 3, 30),
-                                      datetime.date(2007, 4, 1)),
-                          new_count=len(new),
-                          cross_count=0, # TODO crosses
-                          rep_count=0, # TODO repcount
-                          expires='Wed, 21 Oct 2015 07:28:00 GMT' #TODO
-                          )
+        new = list(map(_nextmail_to_listing, res))
+        return ListingNew(
+            listings=new,
+            announced=datetime.date(2007, 4, 1),  # TODO
+            submitted=(datetime.date(2007, 3, 30), datetime.date(2007, 4, 1)),
+            new_count=len(new),
+            cross_count=0,  # TODO crosses
+            rep_count=0,  # TODO repcount
+            expires="Wed, 21 Oct 2015 07:28:00 GMT",  # TODO
+        )
 
-    def list_pastweek_articles(self,
-                               archiveOrCategory: str,
-                               skip: int,
-                               show: int,
-                               if_modified_since: Optional[str] = None)\
-                               -> Union[Listing, NotModifiedResponse]:
+    def list_pastweek_articles(
+        self,
+        archiveOrCategory: str,
+        skip: int,
+        show: int,
+        if_modified_since: Optional[str] = None,
+    ) -> Union[Listing, NotModifiedResponse]:
         """Gets listings for the 5 most recent announcement/publish."""
         query = self._query_base(archiveOrCategory)
         query = query.order_by(NextMail.mail_id.desc()).limit(5)
         res = list(query.all())
         return _to_listings(res, len(res))
 
-    def monthly_counts(self,
-                       archive: str,
-                       year: int) -> ListingCountResponse:
+    def monthly_counts(self, archive: str, year: int) -> ListingCountResponse:
         """Gets monthly listing counts for the year."""
         # TODO needs filtering by archive
-        txtq="""
+        txtq = """
 SELECT SUBSTR(mail_id,3,2) AS month,
 SUM(CASE type WHEN 'new' THEN 1 ELSE 0 END) AS new_count,
 SUM(CASE type WHEN 'cross' THEN 1 ELSE 0 END ) AS cross_count
@@ -163,41 +165,47 @@ GROUP BY month
 """
         # TODO Limit to archive!
         yy = self._year_to_yy(int(year))
-        res = db.session.execute(text(txtq), {"yy": yy+"%"})
-        counts = [MonthCount(int(yy), int(mm), int(new), int(cross), gen_expires(), [])
-                  for mm,new,cross in res]
-        return ListingCountResponse(counts,
-                                    sum([mx.new for mx in counts]),
-                                    sum([mx.cross for mx in counts]))
+        res = db.session.execute(text(txtq), {"yy": yy + "%"})
+        counts = [
+            MonthCount(int(yy), int(mm), int(new), int(cross), gen_expires(), [])
+            for mm, new, cross in res
+        ]
+        return ListingCountResponse(
+            counts, sum([mx.new for mx in counts]), sum([mx.cross for mx in counts])
+        )
 
-
-
-    def service_status(self)->List[str]:
+    def service_status(self) -> List[str]:
         # TODO
         return []
 
+
 def _nextmail_to_listing(row: Any) -> ListingItem:
-    return ListingItem(id=row.paper_id, listingType=row.type,
-                       primary='hep-ph')  # TODO add real primary
+    return ListingItem(
+        id=row.paper_id, listingType=row.type, primary="hep-ph"
+    )  # TODO add real primary
 
 
 def _to_listings(res: Any, total_count: int) -> Listing:
-    return Listing(listings=list(map(_nextmail_to_listing, res)),
-                   pubdates=_to_pubdates(res),
-                   count=total_count,
-                   expires='')
+    return Listing(
+        listings=list(map(_nextmail_to_listing, res)),
+        pubdates=_to_pubdates(res),
+        count=total_count,
+        expires="",
+    )
+
 
 def _to_pubdates(res: Any) -> List[Tuple[datetime.date, int]]:
     pubdates = []
-    keyf = lambda row: row.mail_id
+    def keyf(row):
+        return row.mail_id
     next_rows = list(sorted(res, key=keyf))
     for day, grp in groupby(next_rows, keyf):
         yy, mm, dd = int(day[0:2]), int(day[2:4]), int(day[4:6])
-        if yy > 80: # it's in 1900s
+        if yy > 80:  # it's in 1900s
             yyyy = 1900 + yy
         else:
             yyyy = 2000 + yy
-        pubdates.append( (datetime.date(yyyy,mm,dd), len(list(grp)) ))
+        pubdates.append((datetime.date(yyyy, mm, dd), len(list(grp))))
 
     return pubdates
 

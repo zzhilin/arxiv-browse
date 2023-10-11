@@ -1,6 +1,6 @@
 """Routes for PDF, source and other downloads."""
 from typing import Optional
-from flask import Blueprint, redirect, url_for, Response, render_template, request
+from flask import Blueprint, redirect, url_for, Response, render_template
 from werkzeug.exceptions import InternalServerError, BadRequest
 
 from browse.services.documents import get_doc_service
@@ -12,19 +12,19 @@ from browse.controllers.files.dissimination import get_dissimination_resp
 from browse.controllers import check_supplied_identifier
 
 
-blueprint = Blueprint('dissemination', __name__)
+blueprint = Blueprint("dissemination", __name__)
 
 
-@blueprint.route("/pdf/<string:archive>/<string:arxiv_id>", methods=['GET', 'HEAD'])
-@blueprint.route("/pdf/<string:arxiv_id>", methods=['GET', 'HEAD'])
+@blueprint.route("/pdf/<string:archive>/<string:arxiv_id>", methods=["GET", "HEAD"])
+@blueprint.route("/pdf/<string:arxiv_id>", methods=["GET", "HEAD"])
 def redirect_pdf(arxiv_id: str, archive=None):  # type: ignore
     """Redirect urls without .pdf so they download a filename recognized as a PDF."""
     arxiv_id = f"{archive}/{arxiv_id}" if archive else arxiv_id
-    return redirect(url_for('.pdf', arxiv_id=arxiv_id, _external=True), 301)
+    return redirect(url_for(".pdf", arxiv_id=arxiv_id, _external=True), 301)
 
 
-@blueprint.route("/pdf/<string:archive>/<string:arxiv_id>.pdf", methods=['GET', 'HEAD'])
-@blueprint.route("/pdf/<string:arxiv_id>.pdf", methods=['GET', 'HEAD'])
+@blueprint.route("/pdf/<string:archive>/<string:arxiv_id>.pdf", methods=["GET", "HEAD"])
+@blueprint.route("/pdf/<string:arxiv_id>.pdf", methods=["GET", "HEAD"])
 def pdf(arxiv_id: str, archive=None):  # type: ignore
     """Want to handle the following patterns:
 
@@ -48,8 +48,8 @@ def pdf(arxiv_id: str, archive=None):  # type: ignore
     return get_dissimination_resp(fileformat.pdf, arxiv_id, archive)
 
 
-@blueprint.route("/format/<string:archive>/<string:arxiv_id>", methods=['GET', 'HEAD'])
-@blueprint.route("/format/<string:arxiv_id>", methods=['GET', 'HEAD'])
+@blueprint.route("/format/<string:archive>/<string:arxiv_id>", methods=["GET", "HEAD"])
+@blueprint.route("/format/<string:arxiv_id>", methods=["GET", "HEAD"])
 def format(arxiv_id: str, archive: Optional[str] = None) -> Response:
     """Get formats article."""
     arxiv_id = f"{archive}/{arxiv_id}" if archive else arxiv_id
@@ -63,12 +63,12 @@ def format(arxiv_id: str, archive: Optional[str] = None) -> Response:
         return redirect  # type: ignore
 
     abs_meta = get_doc_service().get_abs(arxiv_id)
-    data = {"arxiv_id": arxiv_identifier.id,
-            "arxiv_idv": arxiv_identifier.idv,
-            "abs_meta": abs_meta}
+    data = {
+        "arxiv_id": arxiv_identifier.id,
+        "arxiv_idv": arxiv_identifier.idv,
+        "abs_meta": abs_meta,
+    }
 
-    download_format_pref = request.cookies.get("xxx-ps-defaults")
-    add_sciencewise_ping = False
     formats = get_article_store().get_all_paper_formats(abs_meta)
     data["formats"] = formats
     for fmt in formats:
@@ -83,8 +83,8 @@ def format(arxiv_id: str, archive: Optional[str] = None) -> Response:
     return render_template("format.html", **data), 200, {}  # type: ignore
 
 
-@blueprint.route("/dvi/<string:archive>/<string:arxiv_id>", methods=['GET', 'HEAD'])
-@blueprint.route("/dvi/<string:arxiv_id>", methods=['GET', 'HEAD'])
+@blueprint.route("/dvi/<string:archive>/<string:arxiv_id>", methods=["GET", "HEAD"])
+@blueprint.route("/dvi/<string:arxiv_id>", methods=["GET", "HEAD"])
 def dvi(arxiv_id: str) -> Response:
     """Get DVI for article."""
     raise InternalServerError(f"Not yet implemented {arxiv_id}")

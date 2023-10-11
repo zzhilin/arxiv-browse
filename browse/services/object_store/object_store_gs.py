@@ -25,7 +25,7 @@ class GsObjectStore(ObjectStore):
         Returns `FileDoesNotExist` if there is no object at the key."""
         blob = self.bucket.get_blob(key)
         if not blob:
-            return FileDoesNotExist("gs://" + self.bucket.name + '/' + key)
+            return FileDoesNotExist("gs://" + self.bucket.name + "/" + key)
         else:
             return blob  # type: ignore
 
@@ -41,6 +41,6 @@ class GsObjectStore(ObjectStore):
     def status(self) -> Tuple[Literal["GOOD", "BAD"], str]:
         """Gets if bucket can be read."""
         if self.bucket.exists():
-            return ("GOOD", '')
+            return ("GOOD", "")
         else:
-            return ("BAD", 'bucket does not exist or API down')
+            return ("BAD", "bucket does not exist or API down")

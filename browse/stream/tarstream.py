@@ -9,7 +9,7 @@ from browse.services.object_store import FileObj
 BUFFER_SIZE = 16 * 1024  # bytes, similar to tarfile.copyfileobj()
 
 
-class _FileStream():
+class _FileStream:
     def __init__(self) -> None:
         self.buffer = BytesIO()
         self.offset = 0
@@ -38,17 +38,17 @@ def _to_tarinfo(fileobj: FileObj) -> tarfile.TarInfo:
     return tarinfo
 
 
-def tar_stream_gen(files: List[FileObj],
-                   to_tarinfo: Callable[[FileObj], tarfile.TarInfo] = _to_tarinfo)\
-        -> Iterator[bytes]:
+def tar_stream_gen(
+    files: List[FileObj], to_tarinfo: Callable[[FileObj], tarfile.TarInfo] = _to_tarinfo
+) -> Iterator[bytes]:
     """Returns an `iterator[bytes]` over the bytes of a .tar made up of the
     items in `file_list`.
 
     This will be gzipped."""
     buffer = _FileStream()
-    tar = tarfile.TarFile.open('no_file_name',
-                               mode='w|gz',
-                               fileobj=buffer)  # type: ignore
+    tar = tarfile.TarFile.open(
+        "no_file_name", mode="w|gz", fileobj=buffer
+    )  # type: ignore
     if tar.fileobj is None:
         raise Exception("Tar has None for fileobj")
 
@@ -57,7 +57,7 @@ def tar_stream_gen(files: List[FileObj],
         tar.addfile(tarinfo)
         yield buffer.pop()
 
-        with fileobj.open('rb') as fp:
+        with fileobj.open("rb") as fp:
             while True:
                 blk = fp.read(BUFFER_SIZE)
                 if len(blk) > 0:
@@ -67,8 +67,7 @@ def tar_stream_gen(files: List[FileObj],
                     # taken from tarfile.TarFile.addfile()
                     blocks, remainder = divmod(tarinfo.size, tarfile.BLOCKSIZE)
                     if remainder > 0:
-                        tar.fileobj.write(
-                            tarfile.NUL * (tarfile.BLOCKSIZE - remainder))
+                        tar.fileobj.write(tarfile.NUL * (tarfile.BLOCKSIZE - remainder))
                         yield buffer.pop()
                         blocks += 1
 

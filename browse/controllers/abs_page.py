@@ -16,12 +16,11 @@ from arxiv import taxonomy
 from arxiv.base import logging
 from dateutil import parser
 from dateutil.tz import tzutc
-from flask import request, url_for, current_app
+from flask import request, url_for
 from werkzeug.exceptions import InternalServerError
 
 from browse.controllers import check_supplied_identifier, biz_tz
 
-from arxiv import taxonomy
 # from arxiv.base import logging
 from browse.domain.category import Category
 from browse.domain.identifier import (
@@ -65,13 +64,8 @@ from browse.formatting.search_authors import (
     queries_for_authors,
     split_long_author_list,
 )
-from browse.controllers.response_headers import (
-    abs_expires_header,
-    mime_header_date
-)
+from browse.controllers.response_headers import abs_expires_header, mime_header_date
 from browse.formatting.metatags import meta_tag_metadata
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +129,7 @@ def get_abs_page(arxiv_id: str) -> Response:
             archive=abs_meta.primary_archive.id,
             query=author_query,
         )
-        response_data['latexml_url'] = get_latexml_url(abs_meta)
+        response_data["latexml_url"] = get_latexml_url(abs_meta)
 
         # Dissemination formats for download links
         download_format_pref = request.cookies.get("xxx-ps-defaults")
@@ -143,26 +137,40 @@ def get_abs_page(arxiv_id: str) -> Response:
         response_data["formats"] = get_article_store().get_dissemination_formats(
             abs_meta, download_format_pref, add_sciencewise_ping
         )
-        if response_data['latexml_url'] is not None:
-            response_data['formats'].append('latexml')
+        if response_data["latexml_url"] is not None:
+            response_data["formats"].append("latexml")
 
         response_data["withdrawn_versions"] = []
         response_data["higher_version_withdrawn"] = False
         for ver_index in range(0, abs_meta.highest_version()):
-            formats = formats_from_source_type(abs_meta.version_history[ver_index].source_type.code)
+            formats = formats_from_source_type(
+                abs_meta.version_history[ver_index].source_type.code
+            )
             if len(formats) == 1 and formats[0] == "src":
-                response_data["withdrawn_versions"].append(abs_meta.version_history[ver_index])
-                if not response_data["higher_version_withdrawn"] and ver_index > abs_meta.version - 1:
+                response_data["withdrawn_versions"].append(
+                    abs_meta.version_history[ver_index]
+                )
+                if (
+                    not response_data["higher_version_withdrawn"]
+                    and ver_index > abs_meta.version - 1
+                ):
                     response_data["higher_version_withdrawn"] = True
-                    response_data["higher_version_withdrawn_submitter"] = _get_submitter(abs_meta.arxiv_identifier, ver_index+1)
+                    response_data[
+                        "higher_version_withdrawn_submitter"
+                    ] = _get_submitter(abs_meta.arxiv_identifier, ver_index + 1)
 
-        response_data["withdrawn"] = abs_meta.version_history[abs_meta.version - 1] in response_data["withdrawn_versions"]
+        response_data["withdrawn"] = (
+            abs_meta.version_history[abs_meta.version - 1]
+            in response_data["withdrawn_versions"]
+        )
 
         _non_critical_abs_data(abs_meta, arxiv_identifier, response_data)
 
     except AbsNotFoundException as ex:
-        if (arxiv_identifier.is_old_id
-            and arxiv_identifier.archive in taxonomy.definitions.ARCHIVES):
+        if (
+            arxiv_identifier.is_old_id
+            and arxiv_identifier.archive in taxonomy.definitions.ARCHIVES
+        ):
             archive_name = taxonomy.definitions.ARCHIVES[arxiv_identifier.archive][
                 "name"
             ]
@@ -228,9 +236,7 @@ def _non_critical_abs_data(
     _check_context(arxiv_identifier, abs_meta.primary_category, response_data)
 
     response_data["is_covid_match"] = _is_covid_match(abs_meta)
-    response_data["datacite_doi"] = get_datacite_doi(
-        paper_id=abs_meta.arxiv_id
-    )
+    response_data["datacite_doi"] = get_datacite_doi(paper_id=abs_meta.arxiv_id)
 
 
 def _check_request_headers(
@@ -240,9 +246,11 @@ def _check_request_headers(
     last_mod_dt: datetime = docmeta.modified
 
     # Latest trackback ping time depends on the database
-    if 'trackback_ping_latest' in response_data \
-       and isinstance(response_data['trackback_ping_latest'], datetime) \
-       and response_data['trackback_ping_latest'] > last_mod_dt:
+    if (
+        "trackback_ping_latest" in response_data
+        and isinstance(response_data["trackback_ping_latest"], datetime)
+        and response_data["trackback_ping_latest"] > last_mod_dt
+    ):
         # If there is a more recent trackback ping, use that datetime
         last_mod_dt = response_data["trackback_ping_latest"]
 
@@ -293,8 +301,14 @@ def _get_req_header(header: str) -> Optional[str]:
 
     HTTP header keys are case insensitive. RFC 2616
     """
-    return next((value for key, value in request.headers.items()
-                 if key.lower() == header.lower()), None)
+    return next(
+        (
+            value
+            for key, value in request.headers.items()
+            if key.lower() == header.lower()
+        ),
+        None,
+    )
 
 
 def _check_legacy_id_params(arxiv_id: str) -> str:
@@ -449,10 +463,10 @@ def _check_dblp(docmeta: DocMetadata, db_override: bool = False) -> Optional[Dic
     }
 
 
-def _get_submitter(arxiv_id: Identifier, ver:Optional[int]=None) -> Optional[str]:
+def _get_submitter(arxiv_id: Identifier, ver: Optional[int] = None) -> Optional[str]:
     """Gets the submitter of the version."""
     try:
         abs_meta = get_doc_service().get_abs(f"{arxiv_id.id}v{ver}")
         return abs_meta.submitter.name or None
-    except:
+    except Exception:
         return None

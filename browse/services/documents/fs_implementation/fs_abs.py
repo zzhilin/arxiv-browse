@@ -8,20 +8,23 @@ from browse.domain.identifier import Identifier
 from browse.services.documents.config.deleted_papers import DELETED_PAPERS
 from browse.services.anypath import fs_check
 
-from browse.services.documents.base_documents import DocMetadataService, \
-    AbsDeletedException, AbsNotFoundException, \
-    AbsVersionNotFoundException
+from browse.services.documents.base_documents import (
+    DocMetadataService,
+    AbsDeletedException,
+    AbsNotFoundException,
+    AbsVersionNotFoundException,
+)
 
 from .legacy_fs_paths import FSDocMetaPaths
 from .parse_abs import parse_abs_file
 
+
 class FsDocMetadataService(DocMetadataService):
     """Class for arXiv document metadata service."""
+
     fs_paths: FSDocMetaPaths
 
-    def __init__(self,
-                 latest_versions_path: str,
-                 original_versions_path: str) -> None:
+    def __init__(self, latest_versions_path: str, original_versions_path: str) -> None:
         """Initialize the FS document metadata service."""
         self.fs_paths = FSDocMetaPaths(latest_versions_path, original_versions_path)
 
@@ -46,15 +49,15 @@ class FsDocMetadataService(DocMetadataService):
             raise AbsDeletedException(DELETED_PAPERS[paper_id.id])
 
         latest_version = self._abs_for_version(identifier=paper_id)
-        if not paper_id.has_version \
-           or paper_id.version == latest_version.version:
-            return dataclasses.replace(latest_version,
-                                       is_definitive=True,
-                                       is_latest=True)
+        if not paper_id.has_version or paper_id.version == latest_version.version:
+            return dataclasses.replace(
+                latest_version, is_definitive=True, is_latest=True
+            )
 
         try:
-            this_version = self._abs_for_version(identifier=paper_id,
-                                                 version=paper_id.version)
+            this_version = self._abs_for_version(
+                identifier=paper_id, version=paper_id.version
+            )
         except AbsNotFoundException as e:
             if paper_id.is_old_id:
                 raise
@@ -71,21 +74,21 @@ class FsDocMetadataService(DocMetadataService):
             primary_archive=latest_version.primary_archive,
             primary_group=latest_version.primary_group,
             is_definitive=True,
-            is_latest=False)
+            is_latest=False,
+        )
 
         return combined_version
 
-    def _abs_for_version(self, identifier: Identifier,
-                         version: Optional[int] = None) -> DocMetadata:
+    def _abs_for_version(
+        self, identifier: Identifier, version: Optional[int] = None
+    ) -> DocMetadata:
         """Get a specific version of a paper's abstract metadata.
 
-        if version is None then get the latest version."""        
+        if version is None then get the latest version."""
         path = self.fs_paths.get_abs_file(identifier, version)
         return parse_abs_file(filename=path)
 
-
-
-    def service_status(self)->List[str]:
+    def service_status(self) -> List[str]:
         probs = fs_check(self.fs_paths.latest_versions_path)
         probs.extend(fs_check(self.fs_paths.original_versions_path))
         return ["FsDocMetadataService: {prob}" for prob in probs]

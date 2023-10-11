@@ -41,7 +41,8 @@ def license_for_recorded_license(recorded_uri: Optional[str]) -> str:
     else:
         raise TypeError(
             "License recorded_uri must be str or None, but it was "
-            f"{type(recorded_uri).__name__}")
+            f"{type(recorded_uri).__name__}"
+        )
 
 
 @dataclass
@@ -68,12 +69,11 @@ class License:
 
     def __post_init__(self) -> None:
         """Set the effective license URI."""
-        self.effective_uri = license_for_recorded_license(
-            self.recorded_uri)
+        self.effective_uri = license_for_recorded_license(self.recorded_uri)
         self.icon_uri_path = None
         self.label = None
         if self.effective_uri in LICENSES:
-            if 'icon_uri' in LICENSES[self.effective_uri]:
-                self.icon_uri_path = LICENSES[self.effective_uri]['icon_uri']
-            if 'label' in LICENSES[self.effective_uri]:
-                self.label = LICENSES[self.effective_uri]['label']
+            if "icon_uri" in LICENSES[self.effective_uri]:
+                self.icon_uri_path = LICENSES[self.effective_uri]["icon_uri"]
+            if "label" in LICENSES[self.effective_uri]:
+                self.label = LICENSES[self.effective_uri]["label"]

@@ -15,8 +15,7 @@ blueprint = Blueprint("redirects", __name__)
 @blueprint.route("/terms/ACM1998/<path:path>")
 def redirect_to_api_user_manual(path: str):  # type: ignore
     """Redirects to export user manual."""
-    return redirect("http://export.arxiv.org/api_help/docs/user-manual.html",
-                    code=301)
+    return redirect("http://export.arxiv.org/api_help/docs/user-manual.html", code=301)
 
 
 @blueprint.route("/corr/subjectclasses/", defaults={"path": ""})
@@ -43,16 +42,14 @@ def help_redirect(help_path: str = ""):  # type: ignore
     """Redirect to help pages."""
     help_domain = current_app.config["HELP_SERVER"]
     if SAFE_HELP.fullmatch(request.path):
-        return redirect(f"https://{help_domain}/{request.path}",
-                        code=301)
+        return redirect(f"https://{help_domain}/{request.path}", code=301)
 
     raise BadRequest()
 
 
 @blueprint.route("/corr/", defaults={"path": ""})
 @blueprint.route("/corr/<path:path>")
-def redirect_to_cs_help(path: str):   # type: ignore
+def redirect_to_cs_help(path: str):  # type: ignore
     """redirect to https://info.arxiv.org/help/cs/index.html."""
     help_domain = current_app.config["HELP_SERVER"]
-    return redirect(f"https://{help_domain}/help/cs/index.html",
-                    code=301)
+    return redirect(f"https://{help_domain}/help/cs/index.html", code=301)

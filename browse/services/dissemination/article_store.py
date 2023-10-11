@@ -12,47 +12,55 @@ from arxiv.legacy.papers.dissemination.reasons import FORMATS
 from browse.domain import fileformat
 from browse.domain.metadata import DocMetadata, VersionEntry
 from browse.services.documents.base_documents import (
-    AbsDeletedException, AbsNotFoundException, AbsVersionNotFoundException,
-    DocMetadataService)
+    AbsDeletedException,
+    AbsNotFoundException,
+    AbsVersionNotFoundException,
+    DocMetadataService,
+)
 from browse.services.documents.config.deleted_papers import DELETED_PAPERS
 
 from browse.services.documents.format_codes import (
-    formats_from_source_file_name, formats_from_source_type)
-from browse.services.key_patterns import (abs_path_current_parent,
-                                          abs_path_orig_parent,
-                                          current_pdf_path, previous_pdf_path,
-                                          ps_cache_pdf_path,
-                                          current_ps_path, previous_ps_path,
-                                          ps_cache_ps_path)
+    formats_from_source_file_name,
+    formats_from_source_type,
+)
+from browse.services.key_patterns import (
+    current_pdf_path,
+    previous_pdf_path,
+    ps_cache_pdf_path,
+    current_ps_path,
+    previous_ps_path,
+    ps_cache_ps_path,
+)
 from browse.services.object_store import ObjectStore
-from browse.services.object_store.fileobj import FileObj, FileFromTar
+from browse.services.object_store.fileobj import FileObj
 
 from .source_store import SourceStore
-from .ancillary_files import list_ancillary_files
 
 logger = logging.getLogger(__file__)
 
 
-class Deleted():
+class Deleted:
     def __init__(self, msg: str):
         self.msg = msg
 
 
-class CannotBuildPdf():
+class CannotBuildPdf:
     def __init__(self, msg: str):
         self.msg = msg
 
 
 Conditions = Union[
-    Literal["WITHDRAWN",  # Where the version is a WDR
-            "ARTICLE_NOT_FOUND",  # Where there is no article
-            "VERSION_NOT_FOUND",  # Where article exists but not version
-            "NO_SOURCE",  # Article and version exists but no source exists
-            "UNAVAILABLE",  # Where the PDF unexpectedly does not exist
-            "NOT_PDF",  # format that doens't serve a pdf
-            ],
+    Literal[
+        "WITHDRAWN",  # Where the version is a WDR
+        "ARTICLE_NOT_FOUND",  # Where there is no article
+        "VERSION_NOT_FOUND",  # Where article exists but not version
+        "NO_SOURCE",  # Article and version exists but no source exists
+        "UNAVAILABLE",  # Where the PDF unexpectedly does not exist
+        "NOT_PDF",  # format that doens't serve a pdf
+    ],
     Deleted,
-    CannotBuildPdf]
+    CannotBuildPdf,
+]
 """Return conditions for the result of `dissemination()`.
 
 The intent of using a `Union` instead of raising exceptions is that they can be
@@ -60,35 +68,35 @@ type checked.
 """
 
 
-AbsConditions = Union[Literal["ARTICLE_NOT_FOUND",
-                              "VERSION_NOT_FOUND",
-                              "NO_ID"],
-                      Deleted]
+AbsConditions = Union[
+    Literal["ARTICLE_NOT_FOUND", "VERSION_NOT_FOUND", "NO_ID"], Deleted
+]
 
 
 FormatHandlerReturn = Union[Conditions, FileObj]
 
-FHANDLER = Callable[[Identifier, DocMetadata, VersionEntry],
-                    FormatHandlerReturn]
+FHANDLER = Callable[[Identifier, DocMetadata, VersionEntry], FormatHandlerReturn]
 """Type format handler should return."""
 
 
-cannot_gen_pdf_regex = re.compile('H|O|X', re.IGNORECASE)
+cannot_gen_pdf_regex = re.compile("H|O|X", re.IGNORECASE)
 """Regex for use aginst source_type for formats that cannot serve a PDF,
 these are HTML, ODF and DOCX"""
 
 RE_DATE_COMPONENTS = re.compile(
-    r'^Date\s*(?::|\(revised\s*(?P<version>.*?)\):)\s*(?P<date>.*?)'
-    r'(?:\s+\((?P<size_kilobytes>\d+)kb,?(?P<source_type>.*)\))?$')
+    r"^Date\s*(?::|\(revised\s*(?P<version>.*?)\):)\s*(?P<date>.*?)"
+    r"(?:\s+\((?P<size_kilobytes>\d+)kb,?(?P<source_type>.*)\))?$"
+)
 
-v_regex = re.compile(r'.*v(\d+)')
+v_regex = re.compile(r".*v(\d+)")
 
-_src_regex = re.compile(r'.*(\.tar\.gz|\.pdf|\.ps\.gz|\.gz|\.div\.gz|\.html\.gz)')
+_src_regex = re.compile(r".*(\.tar\.gz|\.pdf|\.ps\.gz|\.gz|\.div\.gz|\.html\.gz)")
 
 
 MAX_ITEMS_IN_PATTERN_MATCH = 1000
 """This uses pattern matching on all the keys in an itmes directory. If
 the number if items is very large the was probably a problem"""
+
 
 def _path_to_version(path: FileObj) -> int:
     mtch = v_regex.search(path.name)
@@ -109,7 +117,7 @@ def _is_deleted(id: str) -> Optional[str]:
         return DELETED_PAPERS.get(id, None)
 
 
-def _unset_reasons(str: str, fmt:FORMATS) -> Optional[str]:
+def _unset_reasons(str: str, fmt: FORMATS) -> Optional[str]:
     pass
 
 
@@ -119,13 +127,15 @@ Acceptable_Format_Requests = Union[fileformat.FileFormat, Literal["e-print"]]
 The format `e-print` is a reqeust to get the article's original source data.
 """
 
-class ArticleStore():
-    def __init__(self,
-                 metaservice: DocMetadataService,
-                 objstore: ObjectStore,
-                 reasons: Callable[[str, FORMATS], Optional[str]] = _unset_reasons,
-                 is_deleted: Callable[[str], Optional[str]] = _is_deleted
-                 ):
+
+class ArticleStore:
+    def __init__(
+        self,
+        metaservice: DocMetadataService,
+        objstore: ObjectStore,
+        reasons: Callable[[str, FORMATS], Optional[str]] = _unset_reasons,
+        is_deleted: Callable[[str], Optional[str]] = _is_deleted,
+    ):
         self.metadataservice = metaservice
         self.objstore: ObjectStore = objstore
         self.reasons = reasons
@@ -135,7 +145,7 @@ class ArticleStore():
         self.format_handlers: Dict[Acceptable_Format_Requests, FHANDLER] = {
             fileformat.pdf: self._pdf,
             "e-print": self._e_print,
-            fileformat.ps: self._ps
+            fileformat.ps: self._ps,
         }
 
     def status(self) -> Tuple[Literal["GOOD", "BAD"], str]:
@@ -151,29 +161,33 @@ class ArticleStore():
         stats.append((str(type(self.objstore)), osstat, osmsg))
 
         try:
-            self.reasons('bogusid', 'pdf')
-            stats.append(('pdf_reasons', 'GOOD', ''))
+            self.reasons("bogusid", "pdf")
+            stats.append(("pdf_reasons", "GOOD", ""))
         except Exception as ex:
-            stats.append(('pdf_reasons', 'BAD', str(ex)))
+            stats.append(("pdf_reasons", "BAD", str(ex)))
 
         try:
-            self.is_deleted('2202.00001')
-            stats.append(('is_deleted', 'GOOD', ''))
+            self.is_deleted("2202.00001")
+            stats.append(("is_deleted", "GOOD", ""))
         except Exception as ex:
-            stats.append(('is_deleted', 'BAD', str(ex)))
+            stats.append(("is_deleted", "BAD", str(ex)))
 
-        if all([stat[1] == 'GOOD' for stat in stats]):
-            return ('GOOD', '')
+        if all([stat[1] == "GOOD" for stat in stats]):
+            return ("GOOD", "")
 
-        msgs = [f"{styp} bad due to \"{msg}\"" for styp, stat, msg in stats
-                if stat != 'GOOD']
-        return ('BAD', ' and '.join(msgs))
+        msgs = [
+            f'{styp} bad due to "{msg}"' for styp, stat, msg in stats if stat != "GOOD"
+        ]
+        return ("BAD", " and ".join(msgs))
 
-    def dissemination(self,
-                      format: Acceptable_Format_Requests,
-                      arxiv_id: Identifier,
-                      docmeta: Optional[DocMetadata] = None) \
-            -> Union[Conditions, Tuple[FileObj, fileformat.FileFormat, DocMetadata, VersionEntry]]:
+    def dissemination(
+        self,
+        format: Acceptable_Format_Requests,
+        arxiv_id: Identifier,
+        docmeta: Optional[DocMetadata] = None,
+    ) -> Union[
+        Conditions, Tuple[FileObj, fileformat.FileFormat, DocMetadata, VersionEntry]
+    ]:
         """Gets a `FileObj` for a `Format` for an `arxiv_id`.
 
         If `docmeta` is not passed it will be looked up. When the `docmeta` is
@@ -207,7 +221,7 @@ class ArticleStore():
         except AbsVersionNotFoundException:
             return "VERSION_NOT_FOUND"
         except AbsDeletedException:
-            return Deleted('')
+            return Deleted("")
 
         if arxiv_id.has_version:
             version = docmeta.get_version(arxiv_id.version)
@@ -224,16 +238,22 @@ class ArticleStore():
         if not fileobj:
             return "UNAVAILABLE"
         if isinstance(fileobj, FileObj):
-            return (fileobj, self.sourcestore.get_src_format(docmeta, fileobj), docmeta, version)
+            return (
+                fileobj,
+                self.sourcestore.get_src_format(docmeta, fileobj),
+                docmeta,
+                version,
+            )
         else:
             return fileobj
 
-    def get_dissemination_formats(self,
-                                  docmeta: DocMetadata,
-                                  format_pref: Optional[str] = None,
-                                  add_sciencewise: bool = False,
-                                  src_file: Optional[FileObj] = None
-                                  ) -> List[str]:
+    def get_dissemination_formats(
+        self,
+        docmeta: DocMetadata,
+        format_pref: Optional[str] = None,
+        add_sciencewise: bool = False,
+        src_file: Optional[FileObj] = None,
+    ) -> List[str]:
         """Get a list of possible formats for a `DocMetadata`.
 
         Several checks are performed to determine available formats:
@@ -270,30 +290,33 @@ class ArticleStore():
 
         source_file_formats: List[str] = []
         if src_file is not None:
-            source_file_formats = \
-                formats_from_source_file_name(src_file.name)
+            source_file_formats = formats_from_source_file_name(src_file.name)
         if source_file_formats:
             formats.extend(source_file_formats)
 
             if add_sciencewise:
-                if formats and formats[-1] == 'other':
-                    formats.insert(-1, 'sciencewise_pdf')
+                if formats and formats[-1] == "other":
+                    formats.insert(-1, "sciencewise_pdf")
                 else:
-                    formats.append('sciencewise_pdf')
+                    formats.append("sciencewise_pdf")
         else:
             # check source type from metadata, with consideration of
             # user format preference and cache
             version = docmeta.version
             format_code = docmeta.version_history[version - 1].source_type.code
-            cached_ps_file = self.dissemination(fileformat.ps, docmeta.arxiv_identifier, docmeta)
-            cache_flag = bool(cached_ps_file and isinstance(cached_ps_file, FileObj) \
-                and cached_ps_file.size == 0 \
-                and src_file \
-                and src_file.updated < cached_ps_file.updated)
-            source_type_formats = formats_from_source_type(format_code,
-                                                           format_pref,
-                                                           cache_flag,
-                                                           add_sciencewise)
+            cached_ps_file = self.dissemination(
+                fileformat.ps, docmeta.arxiv_identifier, docmeta
+            )
+            cache_flag = bool(
+                cached_ps_file
+                and isinstance(cached_ps_file, FileObj)
+                and cached_ps_file.size == 0
+                and src_file
+                and src_file.updated < cached_ps_file.updated
+            )
+            source_type_formats = formats_from_source_type(
+                format_code, format_pref, cache_flag, add_sciencewise
+            )
             if source_type_formats:
                 formats.extend(source_type_formats)
 
@@ -309,22 +332,22 @@ class ArticleStore():
         """
         src_fmt: str = self.sourcestore.get_src_format(docmeta).id
         formats: List[str] = []
-        if (src_fmt == 'ps'):
-            formats.extend([src_fmt, 'pdf'])
-        elif (src_fmt == 'pdf' or src_fmt == 'html'):
+        if src_fmt == "ps":
+            formats.extend([src_fmt, "pdf"])
+        elif src_fmt == "pdf" or src_fmt == "html":
             formats.append(src_fmt)
-        elif (src_fmt == 'dvi'):
-            formats.extend([src_fmt, 'tex-ps', 'pdf'])
-        elif (src_fmt == 'tex'):
-            formats.extend(['dvi', 'tex-ps', 'pdf'])
-        elif (src_fmt == 'pdftex'):
-            formats.append('pdf')
-        elif (src_fmt == 'docx' or src_fmt == 'odf'):
-            formats.extend(['pdf', src_fmt])
+        elif src_fmt == "dvi":
+            formats.extend([src_fmt, "tex-ps", "pdf"])
+        elif src_fmt == "tex":
+            formats.extend(["dvi", "tex-ps", "pdf"])
+        elif src_fmt == "pdftex":
+            formats.append("pdf")
+        elif src_fmt == "docx" or src_fmt == "odf":
+            formats.extend(["pdf", src_fmt])
 
         ver = docmeta.get_version()
         if ver and not ver.is_withdrawn:
-            formats.append('src')
+            formats.append("src")
 
         return formats
 
@@ -343,16 +366,20 @@ class ArticleStore():
         """
         return self.sourcestore.get_ancillary_files(docmeta)
 
-    def _pdf(self, arxiv_id: Identifier, docmeta: DocMetadata, version: VersionEntry) -> FormatHandlerReturn:
+    def _pdf(
+        self, arxiv_id: Identifier, docmeta: DocMetadata, version: VersionEntry
+    ) -> FormatHandlerReturn:
         """Handles getting the `FielObj` for a PDF request."""
         if version.source_type.cannot_pdf:
             return "NOT_PDF"
 
-        res = self.reasons(arxiv_id.idv, 'pdf')
+        res = self.reasons(arxiv_id.idv, "pdf")
         if res:
             return CannotBuildPdf(res)
 
-        ps_cache_pdf = self.objstore.to_obj(ps_cache_pdf_path(arxiv_id, version.version))
+        ps_cache_pdf = self.objstore.to_obj(
+            ps_cache_pdf_path(arxiv_id, version.version)
+        )
         if ps_cache_pdf.exists():
             return ps_cache_pdf
 
@@ -363,19 +390,24 @@ class ArticleStore():
                 return pdf_file
         else:
             # try from the /orig with version number for a pdf only paper
-            pdf_file=self.objstore.to_obj(previous_pdf_path(arxiv_id))
+            pdf_file = self.objstore.to_obj(previous_pdf_path(arxiv_id))
             if pdf_file.exists():
                 return pdf_file
 
         if not self.sourcestore.source_exists(arxiv_id, docmeta):
             return "NO_SOURCE"
 
-        logger.debug("No PDF found for %s, source exists and is not WDR, tried %s", arxiv_id.idv,
-                     [str(ps_cache_pdf), str(pdf_file)])
+        logger.debug(
+            "No PDF found for %s, source exists and is not WDR, tried %s",
+            arxiv_id.idv,
+            [str(ps_cache_pdf), str(pdf_file)],
+        )
         return "UNAVAILABLE"
 
-    def _ps(self, arxiv_id: Identifier, docmeta: DocMetadata, version: VersionEntry) -> FormatHandlerReturn:
-        res = self.reasons(arxiv_id.idv, 'ps')
+    def _ps(
+        self, arxiv_id: Identifier, docmeta: DocMetadata, version: VersionEntry
+    ) -> FormatHandlerReturn:
+        res = self.reasons(arxiv_id.idv, "ps")
         if res:
             return CannotBuildPdf(res)
 
@@ -390,20 +422,23 @@ class ArticleStore():
                 return ps_file
         else:
             # try from the /orig with version number for a ps only paper
-            ps_file=self.objstore.to_obj(previous_ps_path(arxiv_id))
+            ps_file = self.objstore.to_obj(previous_ps_path(arxiv_id))
             if ps_file.exists():
                 return ps_file
 
         if not self.sourcestore.source_exists(arxiv_id, docmeta):
             return "NO_SOURCE"
 
-        logger.debug("No PS found for %s, source exists and is not WDR, tried %s", arxiv_id.idv,
-                     [str(cached_ps), str(ps_file)])
+        logger.debug(
+            "No PS found for %s, source exists and is not WDR, tried %s",
+            arxiv_id.idv,
+            [str(cached_ps), str(ps_file)],
+        )
         return "UNAVAILABLE"
 
-    def _e_print(self,
-                 arxiv_id: Identifier,
-                 docmeta: DocMetadata, version: VersionEntry) -> FormatHandlerReturn:
+    def _e_print(
+        self, arxiv_id: Identifier, docmeta: DocMetadata, version: VersionEntry
+    ) -> FormatHandlerReturn:
         """Gets the src as submitted for the arxiv_id.
 
         Lists through possible extensions to find source file.

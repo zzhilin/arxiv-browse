@@ -15,13 +15,11 @@ class FSPrevNext(PrevNextService):
 
     This can handle both local files and Google Storage.
     """
+
     latest_versions_path: str
     original_versions_path: str
 
-
-    def __init__(self,
-                 latest_versions_path: str,
-                 original_versions_path: str) -> None:
+    def __init__(self, latest_versions_path: str, original_versions_path: str) -> None:
         """File based prev next service.
 
         Parameters
@@ -50,14 +48,15 @@ class FSPrevNext(PrevNextService):
         context.
         """
 
-        if arxiv_id.is_old_id or context == 'arxiv' or not context:
-            return PrevNextResult(previous_id=self.get_previous_id(arxiv_id),
-                                  next_id=self.get_next_id(arxiv_id))
+        if arxiv_id.is_old_id or context == "arxiv" or not context:
+            return PrevNextResult(
+                previous_id=self.get_previous_id(arxiv_id),
+                next_id=self.get_next_id(arxiv_id),
+            )
         else:
             return PrevNextResult(usecontroller=True)
 
-
-    def get_next_id(self, identifier: Identifier) -> Optional['Identifier']:
+    def get_next_id(self, identifier: Identifier) -> Optional["Identifier"]:
         """Get the next identifier in sequence if it exists in the abs FS.
 
         Under certain conditions this is called to generate the "next" link
@@ -115,8 +114,10 @@ class FSPrevNext(PrevNextService):
         if not previous_id:
             return None
 
-        if identifier.year == previous_id.year \
-           and identifier.month == previous_id.month:
+        if (
+            identifier.year == previous_id.year
+            and identifier.month == previous_id.month
+        ):
             return previous_id
 
         path = to_anypath(self.fs_paths.get_parent_path(previous_id))
@@ -134,8 +135,7 @@ class FSPrevNext(PrevNextService):
             return None
         try:
             if previous_id.is_old_id:
-                short_id = Identifier(
-                    arxiv_id=f'{previous_id.archive}/{max_id.stem}')
+                short_id = Identifier(arxiv_id=f"{previous_id.archive}/{max_id.stem}")
             else:
                 short_id = Identifier(arxiv_id=max_id.stem)
             return short_id
@@ -144,16 +144,13 @@ class FSPrevNext(PrevNextService):
 
         return None
 
-    def service_status(self)->List[str]:
+    def service_status(self) -> List[str]:
         probs = fs_check(self.fs_paths.latest_versions_path)
         probs.extend(fs_check(self.fs_paths.original_versions_path))
         return ["FSPrevNext: {prob}" for prob in probs]
 
 
-
-
-
-def _next_id(identifier: Identifier) -> Optional['Identifier']:
+def _next_id(identifier: Identifier) -> Optional["Identifier"]:
     """Get next consecutive Identifier relative to the provided Identifier.
 
     Parameters
@@ -166,18 +163,21 @@ def _next_id(identifier: Identifier) -> Optional['Identifier']:
         The next Indentifier in sequence
     """
     next_id = None
-    if identifier.year is not None and \
-            identifier.month is not None and \
-            identifier.num is not None:
+    if (
+        identifier.year is not None
+        and identifier.month is not None
+        and identifier.num is not None
+    ):
         new_year = identifier.year
         new_month = identifier.month
         new_num = identifier.num + 1
-        if (identifier.is_old_id and new_num > 999) \
-           or (not identifier.is_old_id
-               and identifier.year < 2015
-               and new_num > 9999) \
-           or (not identifier.is_old_id
-               and identifier.year >= 2015 and new_num > 99999):
+        if (
+            (identifier.is_old_id and new_num > 999)
+            or (not identifier.is_old_id and identifier.year < 2015 and new_num > 9999)
+            or (
+                not identifier.is_old_id and identifier.year >= 2015 and new_num > 99999
+            )
+        ):
             new_num = 1
             new_month = new_month + 1
             if new_month > 12:
@@ -185,15 +185,18 @@ def _next_id(identifier: Identifier) -> Optional['Identifier']:
                 new_year = new_year + 1
 
         if identifier.is_old_id:
-            next_id = '{}/{:02d}{:02d}{:03d}'.format(
-                identifier.archive, new_year % 100, new_month, new_num)
+            next_id = "{}/{:02d}{:02d}{:03d}".format(
+                identifier.archive, new_year % 100, new_month, new_num
+            )
         else:
             if new_year >= 2015:
-                next_id = '{:02d}{:02d}.{:05d}'.format(
-                    new_year % 100, new_month, new_num)
+                next_id = "{:02d}{:02d}.{:05d}".format(
+                    new_year % 100, new_month, new_num
+                )
             else:
-                next_id = '{:02d}{:02d}.{:04d}'.format(
-                    new_year % 100, new_month, new_num)
+                next_id = "{:02d}{:02d}.{:04d}".format(
+                    new_year % 100, new_month, new_num
+                )
         try:
             return Identifier(arxiv_id=next_id)
         except IdentifierException:
@@ -208,8 +211,7 @@ def _next_yymm_id(identifier: Identifier) -> Optional[Identifier]:
     This does not access any data, it just gets the first ID of the next month.
     """
     next_yymm_id = None
-    if identifier.year is not None and \
-            identifier.month is not None:
+    if identifier.year is not None and identifier.month is not None:
         new_year = identifier.year
         new_month = identifier.month + 1
         new_num = 1
@@ -217,14 +219,17 @@ def _next_yymm_id(identifier: Identifier) -> Optional[Identifier]:
             new_month = 1
             new_year = new_year + 1
         if identifier.is_old_id:
-            next_yymm_id = '{}/{:02d}{:02d}{:03d}'.format(
-                identifier.archive, new_year % 100, new_month, new_num)
+            next_yymm_id = "{}/{:02d}{:02d}{:03d}".format(
+                identifier.archive, new_year % 100, new_month, new_num
+            )
         elif new_year >= 2015:
-            next_yymm_id = '{:02d}{:02d}.{:05d}'.format(
-                new_year % 100, new_month, new_num)
+            next_yymm_id = "{:02d}{:02d}.{:05d}".format(
+                new_year % 100, new_month, new_num
+            )
         else:
-            next_yymm_id = '{:02d}{:02d}.{:04d}'.format(
-                new_year % 100, new_month, new_num)
+            next_yymm_id = "{:02d}{:02d}.{:04d}".format(
+                new_year % 100, new_month, new_num
+            )
 
         try:
             return Identifier(arxiv_id=next_yymm_id)
@@ -234,7 +239,7 @@ def _next_yymm_id(identifier: Identifier) -> Optional[Identifier]:
         return None
 
 
-def _previous_id(identifier: Identifier) -> Optional['Identifier']:
+def _previous_id(identifier: Identifier) -> Optional["Identifier"]:
     """Get previous consecutive Identifier relative to provided Identifier.
 
     This does not access any data, it just gets the previous ID taking into
@@ -250,9 +255,11 @@ def _previous_id(identifier: Identifier) -> Optional['Identifier']:
         The previous Indentifier in sequence
     """
     previous_id = None
-    if identifier.year is not None and \
-            identifier.month is not None and \
-            identifier.num is not None:
+    if (
+        identifier.year is not None
+        and identifier.month is not None
+        and identifier.num is not None
+    ):
         new_year = identifier.year
         new_month = identifier.month
         new_num = identifier.num - 1
@@ -265,19 +272,22 @@ def _previous_id(identifier: Identifier) -> Optional['Identifier']:
         if identifier.is_old_id:
             if new_num == 0:
                 new_num = 999
-            previous_id = '{}/{:02d}{:02d}{:03d}'.format(
-                identifier.archive, new_year % 100, new_month, new_num)
+            previous_id = "{}/{:02d}{:02d}{:03d}".format(
+                identifier.archive, new_year % 100, new_month, new_num
+            )
         else:
             if new_year >= 2015:
                 if new_num == 0:
                     new_num = 99999
-                previous_id = '{:02d}{:02d}.{:05d}'.format(
-                    new_year % 100, new_month, new_num)
+                previous_id = "{:02d}{:02d}.{:05d}".format(
+                    new_year % 100, new_month, new_num
+                )
             else:
                 if new_num == 0:
                     new_num = 9999
-                previous_id = '{:02d}{:02d}.{:04d}'.format(
-                    new_year % 100, new_month, new_num)
+                previous_id = "{:02d}{:02d}.{:04d}".format(
+                    new_year % 100, new_month, new_num
+                )
         try:
             return Identifier(arxiv_id=previous_id)
         except IdentifierException:

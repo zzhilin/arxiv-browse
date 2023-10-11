@@ -1,8 +1,6 @@
 """Service to get PDF and other disseminations of an item."""
 from flask import current_app
 
-from browse.domain.fileformat import (FileFormat, docx, dvigz, htmlgz, odf,
-                                      pdf, ps, psgz, targz)
 from browse.services.documents import get_doc_service
 from google.cloud import storage
 
@@ -25,9 +23,7 @@ def get_article_store() -> "ArticleStore":
     This returns PDF and other formats of the article."""
     global _article_store
     if _article_store is None:
-        _article_store = ArticleStore(
-            get_doc_service(),
-            _get_object_store())
+        _article_store = ArticleStore(get_doc_service(), _get_object_store())
 
     return _article_store
 
@@ -43,7 +39,7 @@ def _get_object_store() -> ObjectStore:
         _object_store = LocalObjectStore(config["DISSEMINATION_STORAGE_PREFIX"])
     else:
         gs_client = storage.Client()
-        bname = config["DISSEMINATION_STORAGE_PREFIX"].replace('gs://', '')
+        bname = config["DISSEMINATION_STORAGE_PREFIX"].replace("gs://", "")
         bucket = gs_client.bucket(bname)
         _object_store = GsObjectStore(bucket)
 

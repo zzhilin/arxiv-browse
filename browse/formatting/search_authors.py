@@ -15,7 +15,7 @@ the author list.
 
 def is_affiliation(item: str) -> bool:
     """Return true if a string contains an affiliation."""
-    return item.startswith('(')
+    return item.startswith("(")
 
 
 def is_short(item: str) -> bool:
@@ -25,16 +25,17 @@ def is_short(item: str) -> bool:
 
 def is_etal(item: str) -> bool:
     """Return true if the string contains et al."""
-    return re.match(r'et\.? al\.?$', item) is not None
+    return re.match(r"et\.? al\.?$", item) is not None
 
 
 def is_divider(item: str) -> bool:
     """Return true if the string contains a divider character."""
-    return re.match(r'^(,|:)', item) is not None
+    return re.match(r"^(,|:)", item) is not None
 
 
 def split_long_author_list(
-        authors: AuthorList, size: int) -> Tuple[AuthorList, AuthorList, int]:
+    authors: AuthorList, size: int
+) -> Tuple[AuthorList, AuthorList, int]:
     """Return two lists: first is of size, second is the remaining authors.
 
     The author list has strings which are not part of the author
@@ -82,7 +83,7 @@ def queries_for_authors(authors: str) -> AuthorList:
     a colon.
 
     If a list item is a tuple, author_search_query_str will be something like
-    "Webb J E" which can be used to query the search service. 
+    "Webb J E" which can be used to query the search service.
 
     name_text will be the text to put in side the <a> tag. Such as
     "James E. Webb,"
@@ -90,16 +91,16 @@ def queries_for_authors(authors: str) -> AuthorList:
     DO resolve tex to UTF8 in both the link and text.
     DON'T URL_encode, do that in template
     DON'T do entities, do that in template
-    DON'T escape utf8 for HTML, just return utf8        
+    DON'T escape utf8 for HTML, just return utf8
     """
     out: AuthorList = []
 
     splits: List[str] = split_authors(authors)
     for item in splits:
         if is_divider(item):
-            out.append(item + ' ')
+            out.append(item + " ")
         elif is_affiliation(item):
-            out.append(' ' + tex2utf(item))
+            out.append(" " + tex2utf(item))
         elif is_short(item) or is_etal(item):
             out.append(item)
         else:
@@ -112,26 +113,28 @@ def _link_for_name_or_collab(item: str) -> AuthorList:
     out: List[Union[str, Tuple[str, str]]] = []
 
     # deal with 'for the _whatever_' or 'for _whatever_' or 'the'
-    not_linked = re.match(r'\s*((for\s+the\s+)|(the\s+))(?P<rest>.*)',
-                          item, flags=re.IGNORECASE)
+    not_linked = re.match(
+        r"\s*((for\s+the\s+)|(the\s+))(?P<rest>.*)", item, flags=re.IGNORECASE
+    )
     if not_linked:
         out.append(not_linked.group(1))
-        item = not_linked.group('rest')
+        item = not_linked.group("rest")
 
     item = tex2utf(item)
-    item = re.sub(r'\.(?!) ', '.', item)
-    item = re.sub(r'\\(,| )', ' ', item)
-    item = re.sub(r'([^\\])~', r'\1', item)
-    item = re.sub(r',\s*', ' ', item)
+    item = re.sub(r"\.(?!) ", ".", item)
+    item = re.sub(r"\\(,| )", " ", item)
+    item = re.sub(r"([^\\])~", r"\1", item)
+    item = re.sub(r",\s*", " ", item)
 
-    colab_m = re.match(r'^(.+)\s+(collaboration|group|team)(\s?.*)',
-                       item, re.IGNORECASE)
+    colab_m = re.match(
+        r"^(.+)\s+(collaboration|group|team)(\s?.*)", item, re.IGNORECASE
+    )
     if colab_m:
-        colab = f'{colab_m.group(1)} {colab_m.group(2)}'
+        colab = f"{colab_m.group(1)} {colab_m.group(2)}"
         out.append((item, colab))
         return out
 
-    the_m = re.match('the (.*)', item, re.IGNORECASE)
+    the_m = re.match("the (.*)", item, re.IGNORECASE)
     if the_m:
         out.append((item, the_m.group(1)))
         return out
@@ -142,11 +145,10 @@ def _link_for_name_or_collab(item: str) -> AuthorList:
         query_str = item
     else:
         # Do not include SJ, Jr, Sr, III, IV, etc. in search
-        if re.match(r'SJ|Jr|Sr|[IV]{2,}$', name_bits[-1]) \
-           and len(name_bits) > 1:
+        if re.match(r"SJ|Jr|Sr|[IV]{2,}$", name_bits[-1]) and len(name_bits) > 1:
             name_bits.pop()
 
-        surname = ''
+        surname = ""
         if len(name_bits) > 0:
             surname = name_bits.pop()
 
@@ -158,17 +160,17 @@ def _link_for_name_or_collab(item: str) -> AuthorList:
         for name_bit in name_bits:
             name_bit_count += 1
 
-            if (found_prefix or (name_bit_count > 1
-                                 and re.match('^(' + PREFIX_MATCH + ')$',
-                                              name_bit, re.IGNORECASE))):
+            if found_prefix or (
+                name_bit_count > 1
+                and re.match("^(" + PREFIX_MATCH + ")$", name_bit, re.IGNORECASE)
+            ):
                 surname_prefixes.append(name_bit)
                 found_prefix = True
             else:
                 initials.append(name_bit[0:1])
 
-        sur_initials = surname + ', ' + \
-            ' '.join(initials) if initials else surname
-        query_str = ' '.join([*surname_prefixes, sur_initials])
+        sur_initials = surname + ", " + " ".join(initials) if initials else surname
+        query_str = " ".join([*surname_prefixes, sur_initials])
 
     out.append((item, query_str))
     return out

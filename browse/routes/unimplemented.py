@@ -6,13 +6,7 @@ implemented by arxiv browse.
 The intent is that this could be used to server a "please stand by" message in
 the case of unavailability of other parts of the system.
 """
-from flask import (
-    Blueprint,
-    Response,
-    current_app,
-    make_response,
-    render_template
-)
+from flask import Blueprint, Response, current_app, make_response, render_template
 
 blueprint = Blueprint("unimplemented", __name__)
 
@@ -229,12 +223,13 @@ blueprint = Blueprint("unimplemented", __name__)
 @blueprint.route("/user/upload_status/")
 @blueprint.route("/user/upload_status/<path:path>")
 def unimplemented_msg(path: str = "") -> Response:
-    data = {"msg_headline": "Unimplemented",
-            "msg": "The page you requested is unimplemented."}
+    data = {
+        "msg_headline": "Unimplemented",
+        "msg": "The page you requested is unimplemented.",
+    }
     if "UNIMPLEMENTED_MSG" in current_app.config:
         data["msg"] = current_app.config["UNIMPLEMENTED_MSG"]
     if "UNIMPLEMENTED_MSG_HEADLINE" in current_app.config:
         data["msg_headline"] = current_app.config["UNIMPLEMENTED_MSG_HEADLINE"]
 
-    return make_response(render_template("unimplemented.html", **data),
-                         503, {})
+    return make_response(render_template("unimplemented.html", **data), 503, {})

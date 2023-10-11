@@ -1,7 +1,7 @@
 """Archive landing page."""
 
 import datetime
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple
 from http import HTTPStatus as status
 
 from arxiv.taxonomy.definitions import ARCHIVES, ARCHIVES_SUBSUMED, CATEGORIES
@@ -25,8 +25,7 @@ def get_archive(archive_id: str) -> Tuple[Dict[str, Any], int, Dict[str, Any]]:
         cat_id = CATEGORIES.get(archive_id, {}).get("in_archive", None)
         archive = ARCHIVES.get(cat_id, None)
         if not archive:
-            return archive_index(archive_id,
-                                 status_in=status.NOT_FOUND)
+            return archive_index(archive_id, status_in=status.NOT_FOUND)
         else:
             archive_id = cat_id
 
@@ -58,7 +57,9 @@ def get_archive(archive_id: str) -> Tuple[Dict[str, Any], int, Dict[str, Any]]:
     return data, status.OK, response_headers
 
 
-def archive_index(archive_id: str, status_in: int) -> Tuple[Dict[str, Any], int, Dict[str, Any]]:
+def archive_index(
+    archive_id: str, status_in: int
+) -> Tuple[Dict[str, Any], int, Dict[str, Any]]:
     """Landing page for when there is no archive specified."""
     data: Dict[str, Any] = {}
     data["bad_archive"] = archive_id
@@ -68,7 +69,7 @@ def archive_index(archive_id: str, status_in: int) -> Tuple[Dict[str, Any], int,
         for id in ARCHIVES.keys()
         if id not in ARCHIVES_SUBSUMED and not id.startswith("test")
     ]
-    archives.sort(key=lambda tpl: tpl[0]) # type: ignore
+    archives.sort(key=lambda tpl: tpl[0])  # type: ignore
     data["archives"] = archives
 
     defunct = [
@@ -76,7 +77,7 @@ def archive_index(archive_id: str, status_in: int) -> Tuple[Dict[str, Any], int,
         for id in ARCHIVES.keys()
         if "end_date" in ARCHIVES[id]
     ]
-    defunct.sort(key=lambda tpl: tpl[0]) # type: ignore
+    defunct.sort(key=lambda tpl: tpl[0])  # type: ignore
     data["defunct"] = defunct
 
     data["template"] = "archive/archive_list_all.html"
@@ -96,13 +97,16 @@ def category_list(archive_id: str) -> List[Dict[str, str]]:
     cats = []
     for cat_id in CATEGORIES:
         cat = CATEGORIES[cat_id]
-        if(cat.get("in_archive", "yuck") == archive_id
-           and cat.get("is_active", True)):
-            cats.append({"id": cat_id,
-                         "name": cat.get("name", ""),
-                         "description": cat.get("description", "")})
+        if cat.get("in_archive", "yuck") == archive_id and cat.get("is_active", True):
+            cats.append(
+                {
+                    "id": cat_id,
+                    "name": cat.get("name", ""),
+                    "description": cat.get("description", ""),
+                }
+            )
 
-    cats.sort(key=lambda x: x["name"]) # type: ignore
+    cats.sort(key=lambda x: x["name"])  # type: ignore
     return cats
 
 

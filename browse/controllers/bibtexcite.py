@@ -5,14 +5,18 @@ from browse.domain.identifier import IdentifierIsArchiveException, IdentifierExc
 from browse.formatting.cite import arxiv_bibtex
 from browse.services.documents import get_doc_service
 from browse.services.documents.base_documents import (
-    AbsDeletedException, AbsException, AbsNotFoundException,
-    AbsVersionNotFoundException)
+    AbsDeletedException,
+    AbsException,
+    AbsNotFoundException,
+    AbsVersionNotFoundException,
+)
 from flask import Response, make_response
 
 
-def _handle_failure(func: Callable[[str],Response]) -> Callable[[str],Response]:
+def _handle_failure(func: Callable[[str], Response]) -> Callable[[str], Response]:
     """Handle errors similar to get_abs_page."""
-    def wrapper(arxiv_id:str) -> Response:
+
+    def wrapper(arxiv_id: str) -> Response:
         try:
             return func(arxiv_id)
         except AbsNotFoundException:
@@ -48,5 +52,5 @@ def bibtex_citation(arxiv_id: str) -> Response:
     abs_meta = get_doc_service().get_abs(arxiv_id)
     bibtex = arxiv_bibtex(abs_meta)
     response = make_response(bibtex, 200)
-    response.mimetype = 'text/plain'
+    response.mimetype = "text/plain"
     return response

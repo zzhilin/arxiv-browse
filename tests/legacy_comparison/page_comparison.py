@@ -315,17 +315,5 @@ def format_bad_result(bad: BadResult) -> str:
     return rpt
 
 
-def dict_from_module(module):
-    """
-    Create a dict from a module.
-
-    This is just to get around passing the config to the pool.
-    """
-    context = {}
-    for setting in required_keys:
-        context[setting] = getattr(module, setting)
-    return context
-
-
 if __name__ == '__main__':
     main()

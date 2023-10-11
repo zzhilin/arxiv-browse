@@ -48,7 +48,7 @@ def to_anypath(item: Union[str, Path]) -> APath:
         return Path(item)
 
 
-def fs_check(path:APath, expect_dir:bool=True) -> List[str]:
+def fs_check(path: APath, expect_dir: bool = True) -> List[str]:
     """Checks for a file system for use in `HasStatus.service_status()`"""
     try:
         if expect_dir:
@@ -79,7 +79,7 @@ def _gs_client() -> StorageClient:
     return _global_gs_client
 
 
-_tlocal_gscloudpath: ContextVar[GSClient] = ContextVar('_cloutpath_client')
+_tlocal_gscloudpath: ContextVar[GSClient] = ContextVar("_cloutpath_client")
 """Thead local GSCloudPathClient."""
 
 
@@ -100,7 +100,6 @@ def _gscloudpath_client() -> GSClient:
 
     # Each GSClient will use a thread safe `tempdir.TemporaryDirectory`
     # close_file casues the cache to be cleared on file close
-    tlgsc = GSClient(storage_client=_gs_client(),
-                     file_cache_mode="close_file")
+    tlgsc = GSClient(storage_client=_gs_client(), file_cache_mode="close_file")
     _tlocal_gscloudpath.set(tlgsc)
     return tlgsc

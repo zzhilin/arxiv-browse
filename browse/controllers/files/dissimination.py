@@ -13,7 +13,10 @@ from browse.services.object_store.fileobj import FileObj, UngzippedFileObj
 
 from browse.services.dissemination import get_article_store
 from browse.services.dissemination.article_store import (
-    Acceptable_Format_Requests, CannotBuildPdf, Deleted)
+    Acceptable_Format_Requests,
+    CannotBuildPdf,
+    Deleted,
+)
 from browse.services.next_published import next_publish
 
 from browse.stream.tarstream import tar_stream_gen
@@ -26,16 +29,19 @@ logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
 
 
-Resp_Fn_Sig = Callable[[FileFormat, FileObj, Identifier, DocMetadata,
-                        VersionEntry], Response]
+Resp_Fn_Sig = Callable[
+    [FileFormat, FileObj, Identifier, DocMetadata, VersionEntry], Response
+]
 
 
-def default_resp_fn(file_format: FileFormat,
-                    file: FileObj,
-                    arxiv_id: Identifier,
-                    docmeta: DocMetadata,
-                    version: VersionEntry,
-                    extra: Optional[str] = None) -> Response:
+def default_resp_fn(
+    file_format: FileFormat,
+    file: FileObj,
+    arxiv_id: Identifier,
+    docmeta: DocMetadata,
+    version: VersionEntry,
+    extra: Optional[str] = None,
+) -> Response:
     """Creates a response with appropriate headers for the `file`.
 
     Parameters
@@ -49,32 +55,36 @@ def default_resp_fn(file_format: FileFormat,
     """
 
     # Have to do Range Requests to get GCP CDN to accept larger objects.
-    resp: Response = RangeRequest(file.open('rb'),
-                                  etag=last_modified(file),
-                                  last_modified=file.updated,
-                                  size=file.size).make_response()
+    resp: Response = RangeRequest(
+        file.open("rb"),
+        etag=last_modified(file),
+        last_modified=file.updated,
+        size=file.size,
+    ).make_response()
 
-    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers["Access-Control-Allow-Origin"] = "*"
     if isinstance(file_format, FileFormat):
-        resp.headers['Content-Type'] = file_format.content_type
+        resp.headers["Content-Type"] = file_format.content_type
 
     if resp.status_code == 200:
         # For large files on CloudRun chunked and no content-length needed
         # TODO revisit this, in some cases it doesn't work maybe when
         # combined with gzip encoding?
         # resp.headers['Transfer-Encoding'] = 'chunked'
-        resp.headers.pop('Content-Length')
+        resp.headers.pop("Content-Length")
 
     add_time_headers(resp, file, arxiv_id)
     return resp
 
 
-def src_resp_fn(format: FileFormat,
-                file: FileObj,
-                arxiv_id: Identifier,
-                docmeta: DocMetadata,
-                version: VersionEntry,
-                extra: Optional[str] = None) -> Response:
+def src_resp_fn(
+    format: FileFormat,
+    file: FileObj,
+    arxiv_id: Identifier,
+    docmeta: DocMetadata,
+    version: VersionEntry,
+    extra: Optional[str] = None,
+) -> Response:
     """Prepares a response where the payload will be a tar of the source.
 
     No matter what the actual format of the source, this will try to return a
@@ -85,9 +95,12 @@ def src_resp_fn(format: FileFormat,
     the bytestream and the file will be saved as .tar.
     """
     if file.name.endswith(".tar.gz"):  # Nothing extra to do, already .tar.gz
-        resp = RangeRequest(file.open('rb'), etag=last_modified(file),
-                            last_modified=file.updated,
-                            size=file.size).make_response()
+        resp = RangeRequest(
+            file.open("rb"),
+            etag=last_modified(file),
+            last_modified=file.updated,
+            size=file.size,
+        ).make_response()
     elif file.name.endswith(".gz"):  # unzip single file gz and then tar
         outstream = tar_stream_gen([UngzippedFileObj(file)])
         resp = make_response(outstream, 200)
@@ -100,28 +113,26 @@ def src_resp_fn(format: FileFormat,
 
     resp.headers["Content-Encoding"] = "x-gzip"  # tar_stream_gen() gzips
     resp.headers["Content-Type"] = "application/x-eprint-tar"
-    resp.headers["Content-Disposition"] = \
-        f"attachment; filename=\"{filename}\""
+    resp.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
     add_time_headers(resp, file, arxiv_id)
     resp.headers["ETag"] = last_modified(file)
     return resp  # type: ignore
 
 
-def get_src_resp(arxiv_id_str: str,
-                 archive: Optional[str] = None) -> Response:
-    return get_dissimination_resp("e-print", arxiv_id_str, archive,
-                                  src_resp_fn)
+def get_src_resp(arxiv_id_str: str, archive: Optional[str] = None) -> Response:
+    return get_dissimination_resp("e-print", arxiv_id_str, archive, src_resp_fn)
 
 
-def get_e_print_resp(arxiv_id_str: str,
-                     archive: Optional[str] = None) -> Response:
+def get_e_print_resp(arxiv_id_str: str, archive: Optional[str] = None) -> Response:
     return get_dissimination_resp("e-print", arxiv_id_str, archive)
 
 
-def get_dissimination_resp(file_format: Acceptable_Format_Requests,
-                           arxiv_id_str: str,
-                           archive: Optional[str] = None,
-                           resp_fn: Resp_Fn_Sig = default_resp_fn) -> Response:
+def get_dissimination_resp(
+    file_format: Acceptable_Format_Requests,
+    arxiv_id_str: str,
+    archive: Optional[str] = None,
+    resp_fn: Resp_Fn_Sig = default_resp_fn,
+) -> Response:
     """
     Returns a `Flask` response ojbject for a given `arxiv_id` and `FileFormat`.
 
@@ -131,14 +142,14 @@ def get_dissimination_resp(file_format: Acceptable_Format_Requests,
     try:
         if len(arxiv_id_str) > 40:
             abort(400)
-        if arxiv_id_str.startswith('arxiv/'):
+        if arxiv_id_str.startswith("arxiv/"):
             abort(400, description="do not prefix non-legacy ids with arxiv/")
         arxiv_id = Identifier(arxiv_id_str)
     except IdentifierException as ex:
         return bad_id(arxiv_id_str, str(ex))
 
     item = get_article_store().dissemination(file_format, arxiv_id)
-    logger. debug(f"dissemination_for_id({arxiv_id.idv}) was {item}")
+    logger.debug(f"dissemination_for_id({arxiv_id.idv}) was {item}")
     if not item or item == "VERSION_NOT_FOUND" or item == "ARTICLE_NOT_FOUND":
         return not_found(arxiv_id)
     elif item == "WITHDRAWN":
@@ -174,10 +185,10 @@ def no_source(arxiv_id: Identifier) -> Response:
     This returns a 500 so the technical problem with sync can more easily be
     detected. Later this could be set to a less severe.
     """
-    headers = {'Cache-Control': 'max-age=3000'}
-    return make_response(render_template("pdf/withdrawn.html",
-                                         arxiv_id=arxiv_id),
-                         500, headers)
+    headers = {"Cache-Control": "max-age=3000"}
+    return make_response(
+        render_template("pdf/withdrawn.html", arxiv_id=arxiv_id), 500, headers
+    )
 
 
 def withdrawn(arxiv_id: Identifier) -> Response:
@@ -185,53 +196,59 @@ def withdrawn(arxiv_id: Identifier) -> Response:
 
     Sets expire to one year since this isn't going to change
     in the future, max allowed by RFC 2616"""
-    headers = {'Cache-Control': 'max-age=31536000'}
-    return make_response(render_template("pdf/withdrawn.html",
-                                         arxiv_id=arxiv_id),
-                         200, headers)
+    headers = {"Cache-Control": "max-age=31536000"}
+    return make_response(
+        render_template("pdf/withdrawn.html", arxiv_id=arxiv_id), 200, headers
+    )
 
 
 def unavailable(arxiv_id: Identifier) -> Response:
     """Response sent when the article and version exists but files cannot be found.
 
-    This is an error since the expected files don't exist. """
-    return make_response(render_template("pdf/unavaiable.html",
-                                         arxiv_id=arxiv_id), 500, {})
+    This is an error since the expected files don't exist."""
+    return make_response(
+        render_template("pdf/unavaiable.html", arxiv_id=arxiv_id), 500, {}
+    )
 
 
 def not_pdf(arxiv_id: Identifier) -> Response:
     """Response when there is no PDF for this paper.
 
     The client requested a PDF for a paper which has a different format."""
-    return make_response(render_template("pdf/unavaiable.html",
-                                         arxiv_id=arxiv_id), 404, {})
+    return make_response(
+        render_template("pdf/unavaiable.html", arxiv_id=arxiv_id), 404, {}
+    )
 
 
 def not_found(arxiv_id: Identifier) -> Response:
     """Response when the paper or version does not exist."""
-    headers = {'Expires': format_datetime(next_publish())}
-    return make_response(render_template("pdf/not_found.html",
-                                         arxiv_id=arxiv_id), 404, headers)
+    headers = {"Expires": format_datetime(next_publish())}
+    return make_response(
+        render_template("pdf/not_found.html", arxiv_id=arxiv_id), 404, headers
+    )
 
 
 def not_found_anc(arxiv_id: Identifier) -> Response:
     """Response when an ancillary file does not exist."""
-    headers = {'Expires': format_datetime(next_publish())}
-    return make_response(render_template("src/anc_not_found.html",
-                                         arxiv_id=arxiv_id), 404, headers)
+    headers = {"Expires": format_datetime(next_publish())}
+    return make_response(
+        render_template("src/anc_not_found.html", arxiv_id=arxiv_id), 404, headers
+    )
 
 
 def bad_id(arxiv_id: str, err_msg: str) -> Response:
     """Response when the client requests a bad ID."""
-    return make_response(render_template("pdf/bad_id.html",
-                                         err_msg=err_msg,
-                                         arxiv_id=arxiv_id), 404, {})
+    return make_response(
+        render_template("pdf/bad_id.html", err_msg=err_msg, arxiv_id=arxiv_id), 404, {}
+    )
 
 
 def cannot_build_pdf(arxiv_id: Identifier, msg: str) -> Response:
     """Response when the PDF cannot be built.
 
     These are listed in the REASONS."""
-    return make_response(render_template("pdf/cannot_build_pdf.html",
-                                         err_msg=msg,
-                                         arxiv_id=arxiv_id), 404, {})
+    return make_response(
+        render_template("pdf/cannot_build_pdf.html", err_msg=msg, arxiv_id=arxiv_id),
+        404,
+        {},
+    )

@@ -17,11 +17,12 @@ from browse.services.listing import MonthCount
 @dataclass
 class MonthData:
     """Class to pass data to template"""
+
     month_count: MonthCount
     art: List[Tuple[str, Optional[str]]]
-    yymm:str
-    my:str
-    url:str
+    yymm: str
+    my: str
+    url: str
 
 
 def year_page(archive_id: str, year: Optional[int]) -> Any:
@@ -53,7 +54,7 @@ def year_page(archive_id: str, year: Optional[int]) -> Any:
 
     if year > thisYear:
         # 307 because year might be valid in the future
-        return {}, status.TEMPORARY_REDIRECT, {'Location': '/'}
+        return {}, status.TEMPORARY_REDIRECT, {"Location": "/"}
 
     if year < 100:
         if year >= 91:
@@ -70,21 +71,30 @@ def year_page(archive_id: str, year: Optional[int]) -> Any:
     count_listing = listing_service.monthly_counts(archive_id, year)
     month_data = [
         MonthData(
-            month_count= month_count,
+            month_count=month_count,
             art=ascii_art_month(archive_id, month_count),
-            yymm= f"{str(month_count.year)[2:]}{month_count.month:02}",
-            my = date(year=month_count.year,month=month_count.month, day=1).strftime("%b %Y"),
-            url= url_for('browse.list_articles', context=archive_id,
-                         subcontext=f"{month_count.year}{month_count.month:02}"))
-        for month_count in count_listing.month_counts]
+            yymm=f"{str(month_count.year)[2:]}{month_count.month:02}",
+            my=date(year=month_count.year, month=month_count.month, day=1).strftime(
+                "%b %Y"
+            ),
+            url=url_for(
+                "browse.list_articles",
+                context=archive_id,
+                subcontext=f"{month_count.year}{month_count.month:02}",
+            ),
+        )
+        for month_count in count_listing.month_counts
+    ]
 
     response_data: Dict[str, Any] = {
-        'archive_id': archive_id,
-        'archive': archive,
-        'month_data': month_data,
-        'listing': count_listing,
-        'year': str(year),
-        'stats_by_year': stats_by_year(archive_id, archive, years_operating(archive), year)
+        "archive_id": archive_id,
+        "archive": archive,
+        "month_data": month_data,
+        "listing": count_listing,
+        "year": str(year),
+        "stats_by_year": stats_by_year(
+            archive_id, archive, years_operating(archive), year
+        ),
     }
     response_headers: Dict[str, Any] = {}
 
@@ -94,30 +104,34 @@ def year_page(archive_id: str, year: Optional[int]) -> Any:
 
 
 ASCII_ART_STEP = 20
-ASCII_ART_CHR = '|'
+ASCII_ART_CHR = "|"
 ASCII_ART_URL_STEP = 100
 
 
-def ascii_art_month(archive_id: str, month: MonthCount) -> List[Tuple[str, Optional[str]]]:
+def ascii_art_month(
+    archive_id: str, month: MonthCount
+) -> List[Tuple[str, Optional[str]]]:
     """Make ascii art for a MonthCount."""
     tot = month.new + month.cross
     yyyymm = f"{month.year}{month.month:02}"
 
     def _makestep(idx: int) -> Tuple[str, Optional[str]]:
         if idx % ASCII_ART_URL_STEP == 0:
-            return (ASCII_ART_CHR,
-                    url_for('browse.list_articles',
-                            context=archive_id,
-                            subcontext=yyyymm,
-                            skip=idx))
+            return (
+                ASCII_ART_CHR,
+                url_for(
+                    "browse.list_articles",
+                    context=archive_id,
+                    subcontext=yyyymm,
+                    skip=idx,
+                ),
+            )
         else:
             return (ASCII_ART_CHR, None)
 
     art = [_makestep(idx) for idx in range(0, tot, ASCII_ART_STEP)]
 
-    if tot % ASCII_ART_STEP >= ASCII_ART_STEP/2:
-        art.append(('!', None))
+    if tot % ASCII_ART_STEP >= ASCII_ART_STEP / 2:
+        art.append(("!", None))
 
     return art
-
-

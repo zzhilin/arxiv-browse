@@ -7,8 +7,10 @@ tar.gz, gzipped postscript, gzipped html, a single PDF
 from typing import Optional
 
 
-class FileFormat():
-    def __init__(self, id:str, content_encoding:Optional[str], content_type:str)->None:
+class FileFormat:
+    def __init__(
+        self, id: str, content_encoding: Optional[str], content_type: str
+    ) -> None:
         self.id = id
         self.content_encoding = content_encoding
         self.content_type = content_type
@@ -17,9 +19,8 @@ class FileFormat():
         return self.id
 
 
-
 targz = FileFormat("targz", "x-gzip", "application/x-eprint-tar")
-tex = FileFormat("tex", "x-gzip",  "application/x-eprint-tar")
+tex = FileFormat("tex", "x-gzip", "application/x-eprint-tar")
 psgz = FileFormat("psgz", "x-gzip", "application/postscript")
 dvigz = FileFormat("psgz", "x-gzip", "application/x-dvi")
 htmlgz = FileFormat("htmlgz", "x-gzip", "text/html")
@@ -40,4 +41,4 @@ formats = {
     "gz": gz,
     "docx": docx,
     "odf": odf,
-    }
+}

@@ -175,7 +175,7 @@ def _app_with_db():
     import browse.services.documents as documents
     from browse.services.listing import db_listing
 
-    conf = test_conf()
+    conf = test_config()
     conf["DOCUMENT_ABSTRACT_SERVICE"] = documents.db_docs
     conf["DOCUMENT_LISTING_SERVICE"] = db_listing
 

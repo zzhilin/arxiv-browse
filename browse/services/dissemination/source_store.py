@@ -5,11 +5,20 @@ import re
 from typing import Optional, List
 
 from arxiv.identifier import Identifier
-from browse.domain.fileformat import (FileFormat, docx, dvigz, htmlgz, odf,
-                                      pdf, pdftex, ps, psgz, tex)
+from browse.domain.fileformat import (
+    FileFormat,
+    docx,
+    dvigz,
+    htmlgz,
+    odf,
+    pdf,
+    pdftex,
+    ps,
+    psgz,
+    tex,
+)
 from browse.domain.metadata import DocMetadata
-from browse.services.key_patterns import (abs_path_current_parent,
-                                          abs_path_orig_parent)
+from browse.services.key_patterns import abs_path_current_parent, abs_path_orig_parent
 from browse.services.object_store import ObjectStore
 from browse.services.object_store.fileobj import FileObj
 
@@ -17,14 +26,14 @@ from .ancillary_files import list_ancillary_files
 
 logger = logging.getLogger(__file__)
 
-src_regex = re.compile(r'.*(\.tar\.gz|\.pdf|\.ps\.gz|\.gz|\.div\.gz|\.html\.gz)')
+src_regex = re.compile(r".*(\.tar\.gz|\.pdf|\.ps\.gz|\.gz|\.div\.gz|\.html\.gz)")
 
 MAX_ITEMS_IN_PATTERN_MATCH = 1000
 """This uses pattern matching on all the keys in an itmes directory. If
 the number if items is very large the was probably a problem"""
 
 
-class SourceStore():
+class SourceStore:
     """Service for source related files.
 
     Example
@@ -40,46 +49,47 @@ class SourceStore():
     def __init__(self, objstore: ObjectStore):
         self.objstore = objstore
 
-    def source_exists(self,
-                      arxiv_id: Identifier,
-                      docmeta: DocMetadata) -> bool:
+    def source_exists(self, arxiv_id: Identifier, docmeta: DocMetadata) -> bool:
         """Does the source exist for this `arxiv_id` and `docmeta`?"""
         return bool(self.get_src(arxiv_id, docmeta))
 
-    def get_src(self,
-                arxiv_id: Identifier,
-                docmeta: DocMetadata) -> Optional[FileObj]:
+    def get_src(self, arxiv_id: Identifier, docmeta: DocMetadata) -> Optional[FileObj]:
         """Gets the src for the arxiv_id.
 
         Lists through possible extensions to find source file.
 
         Returns `FileObj` if found, `None` if not."""
-        if not arxiv_id.has_version \
-           or arxiv_id.version == docmeta.highest_version():
+        if not arxiv_id.has_version or arxiv_id.version == docmeta.highest_version():
             parent = abs_path_current_parent(arxiv_id)
         else:
             parent = abs_path_orig_parent(arxiv_id)
 
-        pattern = parent + '/' + arxiv_id.filename
+        pattern = parent + "/" + arxiv_id.filename
         items = list(self.objstore.list(pattern))
         if len(items) > MAX_ITEMS_IN_PATTERN_MATCH:
             raise Exception(f"Too many src matches for {pattern}")
-        if len(items) > .9 * MAX_ITEMS_IN_PATTERN_MATCH:
-            logger.warning("Unexpectedly large src matches %d, max is %d",
-                           len(items), MAX_ITEMS_IN_PATTERN_MATCH)
+        if len(items) > 0.9 * MAX_ITEMS_IN_PATTERN_MATCH:
+            logger.warning(
+                "Unexpectedly large src matches %d, max is %d",
+                len(items),
+                MAX_ITEMS_IN_PATTERN_MATCH,
+            )
 
-        item = next((item for item in items if src_regex.match(item.name)),
-                    None)  # does any obj key match with any extension?
+        item = next(
+            (item for item in items if src_regex.match(item.name)), None
+        )  # does any obj key match with any extension?
         return item
 
-    def get_src_format(self,
-                       docmeta: DocMetadata,
-                       src_file: Optional[FileObj] = None) -> FileFormat:
+    def get_src_format(
+        self, docmeta: DocMetadata, src_file: Optional[FileObj] = None
+    ) -> FileFormat:
         """Gets article's source format as a `FileFormat`."""
         if src_file is None:
             src_file = self.get_src(docmeta.arxiv_identifier, docmeta)
         if src_file is None or src_file.name is None:
-            raise ValueError(f"Must have  src_file and it must have a name for {docmeta.arxiv_identifier}")
+            raise ValueError(
+                f"Must have  src_file and it must have a name for {docmeta.arxiv_identifier}"
+            )
 
         if src_file.name.endswith(".ps.gz"):
             return psgz

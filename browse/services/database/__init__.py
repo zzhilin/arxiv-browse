@@ -35,10 +35,8 @@ from browse.services.database.models import (
     db,
     in_category,
     stats_hourly,
-    paper_owners
+    paper_owners,
 )
-from browse.services.database.models import in_category, stats_hourly
-from browse.domain.identifier import Identifier
 from browse.services.listing import ListingItem
 from arxiv.base import logging
 from logging import Logger
@@ -65,11 +63,15 @@ def db_handle_error(db_logger: Logger, default_return_val: Any) -> Any:
                 return default_return_val
             except (OperationalError, DBAPIError) as ex:
                 if db_logger:
-                    db_logger.warning(f"Error executing query in {func_to_wrap.__name__}: {ex}")
+                    db_logger.warning(
+                        f"Error executing query in {func_to_wrap.__name__}: {ex}"
+                    )
                 return default_return_val
             except Exception as ex:
                 if db_logger:
-                    db_logger.warning(f"Unknown exception in {func_to_wrap.__name__}: {ex}")
+                    db_logger.warning(
+                        f"Unknown exception in {func_to_wrap.__name__}: {ex}"
+                    )
                 raise
 
         return wrapper
@@ -89,6 +91,7 @@ def __paper_trackbacks_query(paper_id: str) -> Query:
         .filter(TrackbackPing.status == "accepted")
     )
 
+
 @db_handle_error(db_logger=logger, default_return_val=None)
 def get_institution(ip: str) -> Optional[Mapping[str, str]]:
     """Get institution label from IP address."""
@@ -105,7 +108,10 @@ def get_institution(ip: str) -> Optional[Mapping[str, str]]:
             MemberInstitutionIP.start <= decimal_ip,
             MemberInstitutionIP.end >= decimal_ip,
         )
-        .group_by(MemberInstitution.id, MemberInstitution.label,)
+        .group_by(
+            MemberInstitution.id,
+            MemberInstitution.label,
+        )
         .subquery()
     )
     institution_row = (
@@ -117,7 +123,7 @@ def get_institution(ip: str) -> Optional[Mapping[str, str]]:
         h = {
             "id": institution_row.id,
             "label": institution_row.label,
-            "ip" : ip,
+            "ip": ip,
         }
     return h
 
@@ -141,20 +147,24 @@ def get_paper_trackback_pings(paper_id: str) -> List[TrackbackPing]:
         .all()
     )
 
+
 # Used on tb page and abs page
 @db_handle_error(db_logger=logger, default_return_val=None)
 def get_trackback_ping(trackback_id: int) -> Optional[TrackbackPing]:
     """Get an individual trackback ping by its id (trackback_id)."""
-    trackback: TrackbackPing = db.session.query(TrackbackPing).filter(
-        TrackbackPing.trackback_id == trackback_id
-    ).first()
+    trackback: TrackbackPing = (
+        db.session.query(TrackbackPing)
+        .filter(TrackbackPing.trackback_id == trackback_id)
+        .first()
+    )
     return trackback
 
 
 # Used only on tb page
 @db_handle_error(db_logger=logger, default_return_val=list())
-def get_recent_trackback_pings(max_trackbacks: int = 25) \
-        -> List[Tuple[TrackbackPing, str, str]]:
+def get_recent_trackback_pings(
+    max_trackbacks: int = 25,
+) -> List[Tuple[TrackbackPing, str, str]]:
     """Get recent trackback pings across all of arXiv."""
     max_trackbacks = min(max(max_trackbacks, 0), 500)
     if max_trackbacks == 0:
@@ -182,15 +192,17 @@ def get_recent_trackback_pings(max_trackbacks: int = 25) \
     return list(tb_doc_tup)
 
 
-#Used on abs page
+# Used on abs page
 @db_handle_error(db_logger=logger, default_return_val=None)
 def get_trackback_ping_latest_date(paper_id: str) -> Optional[datetime]:
     """Get the most recent accepted trackback datetime for a paper_id."""
-    timestamp: int = db.session.query(func.max(TrackbackPing.approved_time)).filter(
-        TrackbackPing.document_id == Document.document_id
-    ).filter(Document.paper_id == paper_id).filter(
-        TrackbackPing.status == "accepted"
-    ).scalar()
+    timestamp: int = (
+        db.session.query(func.max(TrackbackPing.approved_time))
+        .filter(TrackbackPing.document_id == Document.document_id)
+        .filter(Document.paper_id == paper_id)
+        .filter(TrackbackPing.status == "accepted")
+        .scalar()
+    )
     dt = datetime.fromtimestamp(timestamp, tz=tz)
     dt = dt.astimezone(tz=tzutc())
     return dt
@@ -213,7 +225,7 @@ def count_trackback_pings(paper_id: str) -> int:
     return int(row.num_pings)
 
 
-#Not used, only in tests
+# Not used, only in tests
 @db_handle_error(db_logger=logger, default_return_val=0)
 def count_all_trackback_pings() -> int:
     """Count trackback pings for all documents, without DISTINCT(URL)."""
@@ -226,9 +238,12 @@ def count_all_trackback_pings() -> int:
 @db_handle_error(db_logger=logger, default_return_val=False)
 def has_sciencewise_ping(paper_id_v: str) -> bool:
     """Determine whether versioned document has a ScienceWISE ping."""
-    has_ping: bool = db.session.query(SciencewisePing).filter(
-        SciencewisePing.paper_id_v == paper_id_v
-    ).count() > 0
+    has_ping: bool = (
+        db.session.query(SciencewisePing)
+        .filter(SciencewisePing.paper_id_v == paper_id_v)
+        .count()
+        > 0
+    )
     return has_ping
 
 
@@ -236,9 +251,13 @@ def has_sciencewise_ping(paper_id_v: str) -> bool:
 @db_handle_error(db_logger=logger, default_return_val=None)
 def get_dblp_listing_path(paper_id: str) -> Optional[str]:
     """Get the DBLP Bibliography URL for a given document (paper_id)."""
-    url: str = db.session.query(DBLP.url).join(Document).filter(
-        Document.paper_id == paper_id
-    ).one().url
+    url: str = (
+        db.session.query(DBLP.url)
+        .join(Document)
+        .filter(Document.paper_id == paper_id)
+        .one()
+        .url
+    )
     return url
 
 
@@ -256,6 +275,7 @@ def get_dblp_authors(paper_id: str) -> List[str]:
     )
     authors = [a for (a,) in authors_t]
     return authors
+
 
 # Used on home page and stats page
 @db_handle_error(db_logger=logger, default_return_val=None)
@@ -291,9 +311,9 @@ def get_document_count_by_yymm(paper_date: Optional[date] = None) -> int:
 
 # Only used on prevnext page
 @db_handle_error(db_logger=logger, default_return_val=None)
-def get_sequential_id(paper_id: Identifier,
-                      context: str = 'all',
-                      is_next: bool = True) -> Optional[str]:
+def get_sequential_id(
+    paper_id: Identifier, context: str = "all", is_next: bool = True
+) -> Optional[str]:
     """Get the next or previous paper ID in sequence."""
     if not isinstance(paper_id, Identifier) or not paper_id.month or not paper_id.year:
         return None
@@ -353,7 +373,6 @@ def __all_hourly_stats_query() -> Query:
     return db.session.query(stats_hourly)
 
 
-
 # Used on stats page
 @db_handle_error(db_logger=logger, default_return_val=(0, 0, 0))
 def get_hourly_stats_count(stats_date: Optional[date]) -> Tuple[int, int, int]:
@@ -409,6 +428,7 @@ def get_monthly_submission_stats() -> List:
         .all()
     )
 
+
 # Used on stats page
 @db_handle_error(db_logger=logger, default_return_val=(0, 0))
 def get_monthly_submission_count() -> Tuple[int, int]:
@@ -429,6 +449,7 @@ def get_monthly_download_stats() -> List:
         .order_by(asc(StatsMonthlyDownload.ym))
         .all()
     )
+
 
 # Used on stats page
 @db_handle_error(db_logger=logger, default_return_val=0)
@@ -461,7 +482,7 @@ def get_datacite_doi(paper_id: str, account: str = "prod") -> Optional[str]:
     return row.doi if row else None
 
 
-def service_status()->List[str]:
+def service_status() -> List[str]:
     try:
         db.session.query(Document.document_id).limit(1).first()
     except NoResultFound:
@@ -477,7 +498,9 @@ def service_status()->List[str]:
         except NoResultFound:
             return [f"{__file__}: service.database DBLaTeXML: No documents found in db"]
         except (OperationalError, DBAPIError) as ex:
-            return [f"{__file__}: DBLaTeXML: Error executing test query count on documents: {ex}"]
+            return [
+                f"{__file__}: DBLaTeXML: Error executing test query count on documents: {ex}"
+            ]
         except Exception as ex:
             return [f"{__file__}: DBLaTeXML: Problem with DB: {ex}"]
 
@@ -498,31 +521,19 @@ def get_latexml_status_for_document(paper_id: str, version: int = 1) -> Optional
 
 @db_handle_error(db_logger=logger, default_return_val=None)
 def get_user_id_by_author_id(author_id: str) -> Optional[int]:
-    row = (
-        db.session.query(AuthorIds)
-        .filter(AuthorIds.author_id == author_id)
-        .first()
-    )
+    row = db.session.query(AuthorIds).filter(AuthorIds.author_id == author_id).first()
     return row.user_id if row else None
 
 
 @db_handle_error(db_logger=logger, default_return_val=None)
 def get_user_id_by_orcid(orcid: str) -> Optional[int]:
-    row = (
-        db.session.query(OrcidIds)
-        .filter(OrcidIds.orcid == orcid)
-        .first()
-    )
+    row = db.session.query(OrcidIds).filter(OrcidIds.orcid == orcid).first()
     return row.user_id if row else None
 
 
 @db_handle_error(db_logger=logger, default_return_val=None)
 def get_user_display_name(user_id: int) -> Optional[str]:
-    row = (
-        db.session.query(User)
-        .filter(User.user_id == user_id)
-        .first()
-    )
+    row = db.session.query(User).filter(User.user_id == user_id).first()
     if row is None:
         return None
 
@@ -533,11 +544,7 @@ def get_user_display_name(user_id: int) -> Optional[str]:
 
 @db_handle_error(db_logger=logger, default_return_val=None)
 def get_orcid_by_user_id(user_id: int) -> Optional[str]:
-    row = (
-        db.session.query(OrcidIds)
-        .filter(OrcidIds.user_id == user_id)
-        .first()
-    )
+    row = db.session.query(OrcidIds).filter(OrcidIds.user_id == user_id).first()
     return row.orcid if row else None
 
 
@@ -549,9 +556,11 @@ def get_articles_for_author(user_id: int) -> List[ListingItem]:
         .filter(paper_owners.c.user_id == user_id)
         .filter(paper_owners.c.flag_author == 1)
         .filter(paper_owners.c.valid == 1)
-        .filter(Document.paper_id.notlike('test%'))
+        .filter(Document.paper_id.notlike("test%"))
         .order_by(Document.dated.desc())
         .all()
     )
-    return [ListingItem(row[0].paper_id, 'new', row[0].primary_subject_class)
-            for row in rows]
+    return [
+        ListingItem(row[0].paper_id, "new", row[0].primary_subject_class)
+        for row in rows
+    ]

@@ -1,6 +1,6 @@
-from typing import Optional
-from browse.services.database.models import db, DBLaTeXMLDocuments
-from arxiv.base import logging
+# from typing import Optional
+# from browse.services.database.models import db, DBLaTeXMLDocuments
+# from arxiv.base import logging
 
 # logger = logging.getLogger(__name__)
 
@@ -39,10 +39,10 @@ from arxiv.base import logging
 
 # def _insert_latexml_doc (
 #     paper_id: int, document_version: int,
-#     conversion_status: int, latexml_version: str, 
+#     conversion_status: int, latexml_version: str,
 #     tex_checksum: str, conversion_start_time: int,
 #     conversion_end_time: Optional[int] = None) -> None:
-        
+
 #     db.session.add(
 #         DBLaTeXMLDocuments(
 #             paper_id=paper_id,

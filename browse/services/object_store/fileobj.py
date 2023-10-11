@@ -37,7 +37,7 @@ class FileObj(ABC):
         pass
 
     @abstractmethod
-    def open(self,  *args, **kwargs) -> IO:  # type: ignore
+    def open(self, *args, **kwargs) -> IO:  # type: ignore
         """Opens the object similar to the normal Python `open()`"""
         pass
 
@@ -121,8 +121,7 @@ class LocalFileObj(FileObj):
 
     @property
     def updated(self) -> datetime:
-        return datetime.fromtimestamp(self.item.stat().st_mtime,
-                                      tz=timezone.utc)
+        return datetime.fromtimestamp(self.item.stat().st_mtime, tz=timezone.utc)
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -136,7 +135,7 @@ class MockStringFileObj(FileObj):
 
     def __init__(self, name: str, data: str):
         self._name = name
-        self._data = bytes(data, 'utf-8')
+        self._data = bytes(data, "utf-8")
         self._size = len(self._data)
 
     @property

@@ -10,6 +10,7 @@ from browse.services.object_store import FileObj
 
 BUFFER_SIZE = 1024 * 4
 
+
 def cc_versioned() -> str:
     """Versioned PDFs should not change so let's put a time a bit in the future.
 
@@ -19,22 +20,21 @@ def cc_versioned() -> str:
     manual cache invalidation.
 
     """
-    return 'max-age=604800'  # 7 days
+    return "max-age=604800"  # 7 days
 
 
 def add_time_headers(resp: Response, file: FileObj, arxiv_id: Identifier) -> None:
     """Adds time headers to `resp` given the `file` and `arxiv_id`."""
     resp.headers["Last-Modified"] = last_modified(file)
     if arxiv_id.has_version:
-        resp.headers['Cache-Control'] = cc_versioned()
+        resp.headers["Cache-Control"] = cc_versioned()
     else:
-        resp.headers['Expires'] = format_datetime(next_publish())
+        resp.headers["Expires"] = format_datetime(next_publish())
 
 
 def last_modified(fileobj: FileObj) -> str:
     """Returns a value for use with HTTP last-Modified."""
-    return format_datetime(fileobj.updated.astimezone(timezone.utc),
-                           usegmt=True)
+    return format_datetime(fileobj.updated.astimezone(timezone.utc), usegmt=True)
 
 
 def stream_gen(file: FileObj) -> Iterator[bytes]:
