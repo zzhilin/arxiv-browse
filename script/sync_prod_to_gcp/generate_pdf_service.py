@@ -17,8 +17,7 @@ from google.cloud import pubsub_v1
 from sync_published_to_gcp import PS_CACHE_PREFIX, ENSURE_CERT_VERIFY, ArxivSyncJsonFormatter, LOG_FORMAT_KWARGS
 import signal
 
-
-logging.basicConfig(level=logging.WARNING, format='%(message)s (%(threadName)s)')
+logging.basicConfig(level=logging.INFO, format='%(message)s (%(threadName)s)')
 logger = logging.getLogger("genpdf")
 logger.setLevel(logging.INFO)
 
@@ -36,7 +35,7 @@ def arxiv_pdf_url(host:str, arxiv_id: Identifier) -> str:
 
 
 def callback(message: pubsub_v1.subscriber.message.Message) -> None:
-    global HTTP_SESSION, HEADERS, HOST
+    global HTTP_SESSION, HEADERS, HOST, HTTP_TIMEOUT
     json_str = message.data.decode('utf-8')
     try:
         data = json.loads(json_str)
@@ -55,7 +54,8 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:
 
     from_url = arxiv_pdf_url(HOST, arxiv_id)
     try:
-        HTTP_SESSION.get(from_url, headers=HEADERS, stream=True, verify=ENSURE_CERT_VERIFY)
+        logger.debug(f"{from_url}/{to_path}: k off")
+        HTTP_SESSION.get(from_url, headers=HEADERS, stream=True, verify=ENSURE_CERT_VERIFY, timeout=HTTP_TIMEOUT)
     except Exception as exc:
         logger.info(f"{from_url}/{to_path}: back off", exc_info=True)
         pass
@@ -64,18 +64,23 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:
     pass
 
 
-def main(host, gcp_project, sub_id):
-    global HTTP_SESSION, HEADERS, HOST, STORAGE
+def main(host, gcp_project, sub_id, timeout):
+    global HTTP_SESSION, HEADERS, HOST, STORAGE, HTTP_TIMEOUT
+    logger.info("Starting")
     HTTP_SESSION = requests.Session()
     HEADERS = {'User-Agent': "sync-pdf-gen-agent"}
     STORAGE = storage.Client()
     HOST = host
+    HTTP_TIMEOUT = timeout
 
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(gcp_project, sub_id)
-    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+    flow_control = pubsub_v1.types.FlowControl(max_messages=2)
+    streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback,
+                                                 flow_control=flow_control)
 
     def handler_stop_signals(signum, frame):
+        logger.debug("Stopping")
         streaming_pull_future.cancel()
         pass
 
@@ -84,12 +89,15 @@ def main(host, gcp_project, sub_id):
 
     with subscriber:
         try:
+            logger.info("Listening")
             streaming_pull_future.result()
+            logger.info("Stopped listening")
         except TimeoutError:
             streaming_pull_future.cancel()  # Trigger the shutdown.
             streaming_pull_future.result()  # Block until the shutdown is complete.
             pass
         pass
+    logger.info("Exiting")
     pass
 
 
@@ -100,6 +108,7 @@ if __name__ == "__main__":
     ad.add_argument('--subject', help='GCP pubsub ID', default="pdf-gen-sub")
     ad.add_argument('--json-log-dir', help='Additional JSON logging', default='/var/log/e-prints')
     ad.add_argument('--debug', help='Set logging to debug', action='store_true')
+    ad.add_argument('--timeout', help='HTTP Get timeout', default="10")
     ad.add_argument('--globals', help="Global variables")
     args = ad.parse_args()
 
@@ -111,4 +120,4 @@ if __name__ == "__main__":
     json_logHandler.setFormatter(json_formatter)
     json_logHandler.setLevel(logging.DEBUG if args.debug else logging.INFO)
     logger.addHandler(json_logHandler)
-    main(args.host, args.project, args.subject)
+    main(args.host, args.project, args.subject, int(args.timeout))
