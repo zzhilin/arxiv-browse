@@ -53,3 +53,8 @@ sync-to-gcp-queue: .schema-created
 sync-to-gcp-sub: 
 	gcloud pubsub subscriptions create ${PDF_GEN_SUB_ID} --topic=${PDF_GEN_TOPIC}         --ack-deadline=10 --min-retry-delay=60 --max-retry-delay=600 --max-delivery-attempts=100
 	gcloud pubsub subscriptions create ${SYNC_TO_GCP_SUB_ID} --topic=${SYNC_TO_GCP_TOPIC} --ack-deadline=10 --min-retry-delay=60 --max-retry-delay=600 --max-delivery-attempts=100
+
+install-genpdf-service:
+	sudo -H install -m 0644 resource/systemd/generate-pdf.service /etc/systemd/system/
+	sudo systemctl daemon-reload
+	sudo systemctl enable generate-pdf.service

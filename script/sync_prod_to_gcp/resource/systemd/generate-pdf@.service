@@ -1,0 +1,17 @@
+[Unit]
+Description=PDF generation service on CIT for %I
+StartLimitIntervalSec=0
+Wants=network.target network-online.target nfs-client.target
+After=network-online.target nfs-client.target
+# Not using requires because it would block the other services, but I guess, without network or nfs-client,
+# nothing works.
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=e-prints
+ExecStart=/opt_arxiv/e-prints/arxiv/arxiv-browse/script/sync_prod_to_gcp/bin/start-pdf-gen-service.sh %i
+
+[Install]
+WantedBy=multi-user.target
