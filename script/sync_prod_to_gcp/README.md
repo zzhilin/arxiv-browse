@@ -99,5 +99,52 @@ OTOH, because of this, it is rather important for Stanza to be running.
 Currently, the max file size is set to 4MiB, with 10 log files. It should be fine for a few days.
 
 
+# Generate PDF service
 
+## General
 
+BrianC's original uses Python's queue. By externalizing the queue, we don't need to re-run the 
+parsing of publish logs. Instead, you run it once after the publish_xxxxxx.log is created.
+
+The subscriber reads the queue, and if the PDF exists, it subsumes the entry, and it is done.
+If not, then, it forms the URL and hits the webX node to trigger the generation.
+
+## Service setup
+
+There is a (template) unit file. The service process runs one process per web node.
+
+    sudo systemctl enable generate-pdf@web5.service
+    sudo systemctl start  generate-pdf@web5.service
+
+This instantiate the service for web5.arxiv.org. 
+
+## Queueing the PDF generation request
+
+You can run it on any host as long as you have the publish log, and GCP credentials.
+
+    python3 requset_pdf.py /data/new/logs/publish_221101.log
+
+sends the request entry to the queue.
+
+## GCG Pub/sub
+
+It is already set up as [`cit-pdf-gen`](https://console.cloud.google.com/cloudpubsub/topic/detail/cit-pdf-gen?project=arxiv-production)
+
+Ths schema is there as well, and here is [the definition](arxiv_id.schema.json).
+
+See the Makefile for the commands to create the queue and schema.
+
+## Current status
+
+On 2023-10-12, the queue is tentatively (stupidly?) set up to have the maximum retention, 30 days.
+Nothing is running yet.
+
+Plans (or to-dos):
+
+* Create the secondary queue to receive the retired queue elements
+* Any element reaches to the secondary queue triggers the alert.
+* The primary retention should be 12 hours. IOW, 8am or so, we'd notice the failing PDF generation and there is a good
+good chance that the human intervention is required.
+* Enable the unit per web node (See above)
+* Run the gen-pdf request on web10 as soon as the publish log is created.
+* Set up the stanza for the service.
