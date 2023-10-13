@@ -126,7 +126,7 @@ You can run it on any host as long as you have the publish log, and GCP credenti
 
 sends the request entry to the queue.
 
-## GCG Pub/sub
+## GCP Pub/sub
 
 It is already set up as [`cit-pdf-gen`](https://console.cloud.google.com/cloudpubsub/topic/detail/cit-pdf-gen?project=arxiv-production)
 
