@@ -2,6 +2,7 @@
 
 import logging
 from email.utils import format_datetime
+from functools import partial
 from typing import Callable, Optional, Union
 
 from browse.domain.identifier import Identifier, IdentifierException
@@ -178,6 +179,85 @@ def _get_latexml_conversion_file (arxiv_id: Identifier) -> Union[str, FileObj]: 
         item = obj_store.to_obj(f'{arxiv_id.idv}/{arxiv_id.idv}.html')
         if isinstance(item, FileDoesNotExist):
             return "ARTICLE_NOT_FOUND"
+
+def _html_response(file: FileObj,
+                arxiv_id: Identifier,
+                docmeta: DocMetadata,
+                version: VersionEntry,
+                extra: Optional[str] = None):
+    resp = make_response(file, 200)
+    add_time_headers(resp, file, arxiv_id)
+    resp.headers["Content-Type"] = "text/html"
+    resp.headers["ETag"] = last_modified(file)
+    return resp  # type: ignore
+
+
+def _guess_response(file, arxiv_id, docmeta, version, extra):
+    # resp = make_response(file, 200)
+    # based on file.name guess a Content-Type
+    # make headers time headers, maybe etag
+    pass
+
+
+def html_source_response_function(format: FileFormat,
+                file: FileObj,
+                arxiv_id: Identifier,
+                docmeta: DocMetadata,
+                version: VersionEntry,
+                extra: Optional[str] = None):
+    # Not needed since done in get_dissimination_resp
+    # if not file.exists():
+    #     return not_found(arxiv_id.ids)
+    if file.name.endswith(".html.gz") and extra:
+        # todo need return a 404 for this path
+        return not_found_anc() # todo something like new fn not_found_html()
+
+    extra = extra or "index.html"
+    unzipped_file = UngzippedFileObj(file)
+
+    if unzipped_file.name.endswith(".html"):  # handle single html files here
+        requested_file = unzipped_file
+    else:
+        requested_file = FileFromTar(unzipped_file, path=extra)
+
+    if requested_file.name.endswith(".html"):
+        # TODO use example class sent via slack
+        # processed_file = TransformFileObj(requested_file, preprocess_html)
+        return _html_response(processed_file, arxiv_id, docmeta, version, extra)
+    else:
+        return _guess_response(requested_file, arxiv_id, docmeta, version, extra)
+
+def html_latexml_response_function(format: FileFormat,
+                file: FileObj,
+                arxiv_id: Identifier,
+                docmeta: DocMetadata,
+                version: VersionEntry,
+                extra: Optional[str] = None):
+    # get latexml file obj
+    # file = something_or_other(...)
+    # return = _html_response(file, arxiv_id, docmeta, version, extra)
+    pass
+
+
+def html_response_function(format: FileFormat,
+                file: FileObj,
+                arxiv_id: Identifier,
+                docmeta: DocMetadata,
+                version: VersionEntry,
+                extra: Optional[str] = None) -> Response:
+    if docmeta.source_format == 'html': #TODO find a way to distinguish that works. perhaps all the latex files have a latex source?
+        return html_source_response_function(format,file, arxiv_id, docmeta, version, extra)
+    else:
+        return html_latexml_response_function(format,file, arxiv_id, docmeta, version, extra)
+
+
+def get_html_response_example(arxiv_id_str: str,
+                              archive: Optional[str] = None,
+                              extra: Optional[str] = None) -> Response:
+    """Handles both html source and latexml responses."""
+    resp_fn = partial( html_response_function, extra=extra)
+    # We'd probably like to reuse get_discrimination_resp and if it is too PDF specific we should fix that.
+    return get_dissimination_resp(fileformat.html_source, arxiv_id_str, archive, resp_fn=resp_fn)
 
 
 def get_html_response(arxiv_id_str: str,
